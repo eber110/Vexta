@@ -78,7 +78,9 @@ export const sidebarComponent = {
         deleteBtn.addEventListener('click', async (e) => {
           
           e.stopPropagation();
-          if (confirm('¿Estás seguro de que deseas eliminar este chat?')) {
+          const confirmDelete = await this.showDeleteConfirmModal();
+          
+          if (confirmDelete) {
             
             await apiService.deleteSession(session.id);
             if (this.activeSessionId === session.id) {
@@ -175,6 +177,36 @@ export const sidebarComponent = {
       
     }
     
+  },
+  
+  showDeleteConfirmModal() {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('deleteModal');
+      const btnConfirm = document.getElementById('confirmDeleteBtn');
+      const btnCancel = document.getElementById('cancelDeleteBtn');
+      
+      if (!modal || !btnConfirm || !btnCancel) {
+        // Fallback robusto si falta el HTML
+        resolve(confirm('¿Estás seguro de que deseas eliminar este chat?'));
+        return;
+      }
+      
+      // Mostrar modal
+      modal.classList.remove('hidden');
+      
+      const cleanupAndResolve = (result) => {
+        modal.classList.add('hidden');
+        btnConfirm.removeEventListener('click', onConfirm);
+        btnCancel.removeEventListener('click', onCancel);
+        resolve(result);
+      };
+      
+      const onConfirm = () => cleanupAndResolve(true);
+      const onCancel = () => cleanupAndResolve(false);
+      
+      btnConfirm.addEventListener('click', onConfirm);
+      btnCancel.addEventListener('click', onCancel);
+    });
   }
   
 };
