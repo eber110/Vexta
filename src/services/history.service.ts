@@ -81,6 +81,25 @@ export class HistoryService {
     
   }
   
+  async searchPastChats(keyword: string, currentSessionId: number): Promise<{ session_title: string, created_at: string, role: string, content: string }[]> {
+    
+    // Buscamos mensajes que contengan la palabra clave en chats DIFERENTES al actual.
+    // Usamos JOIN para obtener la fecha de la sesión y el título.
+    const sql = `
+      SELECT s.title as session_title, s.created_at, m.role, m.content 
+      FROM messages m
+      JOIN sessions s ON m.session_id = s.id
+      WHERE m.session_id != ? 
+      AND m.content LIKE ?
+      ORDER BY s.created_at DESC, m.created_at ASC
+      LIMIT 20
+    `;
+    
+    const searchPattern = `%${keyword}%`;
+    return await dbService.query(sql, [currentSessionId, searchPattern]);
+    
+  }
+  
 }
 
 // Singleton

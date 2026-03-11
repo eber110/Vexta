@@ -173,6 +173,32 @@ export class ChatController {
         // RECUPERAR HISTORIAL COMPLETO
         const history = await historyService.getHistory(sessionId);
         
+        // RAG GATILLO HÍBRIDO: ¿El usuario quiere buscar algo viejo?
+        const searchRegex = /(antes|recuerdas|otros chats|historial|hablado|dije|ayer|pasado|mencioné|acuerdas|memoria|conversación|información anterior|sesión anterior|otra vez|comentaste|anteriormente|te dije|te conte)/i;
+        if (searchRegex.test(message)) {
+           console.log('[RAG] Posible intención de búsqueda detectada por regex...');
+           const keyword = await llmService.extractSearchIntent(message);
+           
+           if (keyword) {
+             console.log(`[RAG] Intención confirmada por LLM. Buscando palabra clave: '${keyword}'`);
+             const pastChats = await historyService.searchPastChats(keyword, sessionId);
+             
+             if (pastChats && pastChats.length > 0) {
+                // Formatear resultados e inyectarlos sigilosamente
+                const formattedContext = pastChats.map(
+                  p => `[Chat: "${p.session_title}" - Fecha: ${p.created_at}] ${p.role.toUpperCase()}: ${p.content}`
+                ).join('\n');
+                
+                const sysContextMsg = `Información recuperada de otros chats en la base de datos relacionada a "${keyword}":\n${formattedContext}\nUsa esta información para responder a la pregunta actual del usuario. Si la información no es útil, ignórala.`;
+                
+                history.unshift({ role: 'system', content: sysContextMsg, session_id: sessionId });
+             }
+           }
+        }
+        
+        // Formatear para Ollama mapper
+        const ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
+        
         // 2. Transmitir como Server-Sent Events (SSE)
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
@@ -182,7 +208,7 @@ export class ChatController {
         
         let fullReply = '';
         
-        await llmService.generateStream(history, (chunk: string) => {
+        await llmService.generateStream(ollamaHistory, (chunk: string) => {
           
           fullReply += chunk;
           res.write(`data: ${JSON.stringify({ chunk })}\n\n`);

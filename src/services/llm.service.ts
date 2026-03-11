@@ -83,4 +83,57 @@ export class LlmService {
     
   }
   
+  async extractSearchIntent( prompt: string ): Promise<string | null> {
+    
+    const config = llmConfig.providers.ollama;
+    const url = `${config.baseUrl}/api/chat`;
+    
+    const systemPrompt = `
+      Eres un analizador de intenciones. Evalúa si el usuario quiere buscar información en sus CONVERSACIONES PASADAS (otros chats).
+      Devuelve ÚNICAMENTE un objeto JSON en formato {"isSearch": boolean, "keyword": "una o dos palabras clave principales"}.
+      Si no quiere buscar en conversaciones pasadas, isSearch debe ser false y keyword nulo.
+    `;
+    
+    try {
+      
+      const response = await fetch( url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          stream: false,
+          format: 'json' // Obligado a JSON (Ollama soporta este flag en varios modelos)
+        })
+      });
+      
+      if ( !response.ok ) return null;
+      
+      const data: any = await response.json();
+      
+      if (data && data.message && data.message.content) {
+        try {
+          const parsed = JSON.parse(data.message.content);
+          if (parsed.isSearch && parsed.keyword) {
+            return parsed.keyword;
+          }
+        } catch(e) { /* Ignorar errores de json malformado del LLM */ }
+      }
+      
+      return null;
+      
+    } catch ( error ) {
+      
+      console.error( 'Error en extractSearchIntent:', error );
+      return null;
+      
+    }
+    
+  }
+  
 }

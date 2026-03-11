@@ -40,6 +40,7 @@
         <div id="modelSelectorContainer" class="model-selector-container">
           <!-- El selector o label se inyectará aquí dinámicamente -->
         </div>
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Alternar Modo Oscuro/Claro">🌓</button>
       </header>
       
       <main>
@@ -64,6 +65,17 @@
         <div class="delete-modal-actions">
           <button id="cancelDeleteBtn" class="btn-cancel">Cancelar</button>
           <button id="confirmDeleteBtn" class="btn-confirm">Aceptar</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal de Preferencias (Reservado para mañana) -->
+    <div id="preferencesModal" class="delete-modal hidden">
+      <div class="delete-modal-content">
+        <h2>Preferencias de Usuario</h2>
+        <p>Este menú está reservado temporalmente. Se conectará con el backend para guardar configuraciones persistentes (APIs, Modelos, etc) en el contexto del usuario.</p>
+        <div class="delete-modal-actions">
+          <button id="closePreferencesBtn" class="btn-cancel">Cerrar</button>
         </div>
       </div>
     </div>

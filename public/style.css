@@ -1,3 +1,49 @@
+/* Variables de Tema (Por defecto Oscuro) */
+:root {
+  --bg-main: #1e1e1e;
+  --bg-sidebar: #202123;
+  --bg-header: #202123; /* Eliminado el turquesa/azul oscuro (#2c3e50), unificado al sidebar */
+  --bg-message-agent: #2c313a;
+  --bg-message-user: #007acc;
+  --bg-input-container: white;
+  --bg-input: #f4f4f4;
+  --bg-select: #2c313a;
+  --bg-hover: #343541;
+  --border-color: #3c3c3c;
+  --border-input: #ddd;
+  
+  --text-main: #f0f0f0;
+  --text-dim: #ececec;
+  --text-muted: #aaaaaa;
+  --text-agent: #abb2bf;
+  --text-user: #ffffff;
+  --text-select: #98c379;
+  --text-input: #333;
+}
+
+/* Tema Claro */
+:root[data-theme="light"] {
+  --bg-main: #f3f4f6;
+  --bg-sidebar: #e5e7eb;
+  --bg-header: #e5e7eb;
+  --bg-message-agent: #ffffff;
+  --bg-message-user: #007acc;
+  --bg-input-container: #ffffff;
+  --bg-input: #f9fafb;
+  --bg-select: #ffffff;
+  --bg-hover: #d1d5db;
+  --border-color: #d1d5db;
+  --border-input: #d1d5db;
+  
+  --text-main: #1f2937;
+  --text-dim: #374151;
+  --text-muted: #6b7280;
+  --text-agent: #374151;
+  --text-user: #ffffff;
+  --text-select: #059669;
+  --text-input: #1f2937;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,18 +52,19 @@
 }
 
 body {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
+  background-color: var(--bg-main);
+  color: var(--text-main);
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Animaciones de Carga del LLM */
 .message.thinking {
   background-color: transparent !important;
-  color: #a4a4b2;
+  color: var(--text-muted);
   font-style: italic;
   display: flex;
   align-items: center;
@@ -32,7 +79,7 @@ body {
   width: 6px;
   height: 6px;
   margin: 0 2px;
-  background-color: #a4a4b2;
+  background-color: var(--text-muted);
   border-radius: 50%;
   animation: pulse 1.4s infinite ease-in-out both;
 }
@@ -57,12 +104,13 @@ body {
 /* Sidebar Styles */
 .sidebar {
   width: 260px;
-  background-color: #202123;
-  color: white;
+  background-color: var(--bg-sidebar);
+  color: var(--text-dim);
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.3s ease, margin-right 0.3s ease;
   flex-shrink: 0;
+  border-right: 1px solid var(--border-color); /* Separación sutil */
 }
 
 .sidebar.closed {
@@ -72,21 +120,21 @@ body {
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid #3c3c3c;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-header h2 {
   margin: 0 0 15px 0;
   font-size: 1.1rem;
-  color: #ececec;
+  color: var(--text-dim);
 }
 
 .new-chat-btn {
   width: 100%;
   padding: 10px;
   background-color: transparent;
-  color: white;
-  border: 1px solid #565869;
+  color: var(--text-dim);
+  border: 1px solid var(--border-color);
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
@@ -95,7 +143,7 @@ body {
 }
 
 .new-chat-btn:hover {
-  background-color: #40414f;
+  background-color: var(--bg-hover);
 }
 
 .session-list {
@@ -112,13 +160,13 @@ body {
   margin-bottom: 5px;
   border-radius: 5px;
   cursor: pointer;
-  color: #ececec;
+  color: var(--text-dim);
   font-size: 0.9rem;
   transition: background-color 0.2s;
 }
 
 .session-item:hover, .session-item.active {
-  background-color: #343541;
+  background-color: var(--bg-hover);
 }
 
 .session-title {
@@ -131,7 +179,7 @@ body {
 .delete-session-btn {
   background: none;
   border: none;
-  color: #8e8ea0;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 5px;
   font-size: 1rem;
@@ -152,20 +200,21 @@ body {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  background-color: white;
-  box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+  background-color: var(--bg-main);
   height: 100%;
   position: relative;
+  transition: background-color 0.3s ease;
 }
 
 header {
-  background-color: #2c3e50;
-  color: white;
+  background-color: var(--bg-header);
+  color: var(--text-main);
   padding: 1rem 2rem;
   display: flex;
   align-items: center;
   gap: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .toggle-sidebar-btn {
@@ -209,28 +258,28 @@ header p {
 }
 
 .model-label-text {
-  color: #bdc3c7;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
 .model-name {
-  background-color: #2c313a;
-  color: #98c379;
+  background-color: var(--bg-select);
+  color: var(--text-select);
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: bold;
-  border: 1px solid #444;
+  border: 1px solid var(--border-color);
 }
 
 .model-select {
-  background-color: #2c313a;
-  color: #98c379;
+  background-color: var(--bg-select);
+  color: var(--text-select);
   padding: 6px 10px;
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: bold;
-  border: 1px solid #444;
+  border: 1px solid var(--border-color);
   outline: none;
   cursor: pointer;
 }
@@ -240,8 +289,8 @@ header p {
 }
 
 .model-select option {
-  background-color: #2c313a;
-  color: #abb2bf;
+  background-color: var(--bg-select);
+  color: var(--text-agent);
 }
 
 main {
@@ -262,14 +311,15 @@ main {
 
 .chat-history {
   flex: 1;
-  background-color: #1e1e1e;
+  background-color: var(--bg-main);
   border-radius: 8px;
-  border: 1px solid #444;
+  border: 1px solid var(--border-color);
   padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Estilos personalizados para el scrollbar */
@@ -303,42 +353,43 @@ main {
 }
 
 .message.agent {
-  background-color: #2c313a;
-  color: #abb2bf;
+  background-color: var(--bg-message-agent);
+  color: var(--text-agent);
   align-self: flex-start;
-  border: 1px solid #3e4451;
+  border: 1px solid var(--border-color);
 }
 
 .message.user {
-  background-color: #007acc;
-  color: #ffffff;
+  background-color: var(--bg-message-user);
+  color: var(--text-user);
   align-self: flex-end;
 }
 
 .input-container {
   display: flex;
   gap: 10px;
+  background-color: transparent;
 }
 
 #userInput {
   flex: 1;
   padding: 15px;
   border-radius: 8px;
-  border: 1px solid #444;
-  background-color: #1e1e1e;
-  color: #fff;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-input);
+  color: var(--text-input);
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
 }
 
 #userInput:focus {
-  border-color: #61afef;
+  border-color: var(--bg-message-user);
 }
 
 #sendBtn {
-  background-color: #007acc;
-  color: white;
+  background-color: var(--bg-message-user);
+  color: white; /* Siempre blanco dentro del botón azul */
   border: none;
   border-radius: 8px;
   padding: 0 25px;
@@ -349,14 +400,14 @@ main {
 }
 
 #sendBtn:hover {
-  background-color: #005f9e;
+  background-color: #005f9e; /* Hover manual ya que el botón azul es fijo en ambos temas */
 }
 
 /* Estilos para Markdown y Bloques de Código */
 .message pre {
   margin: 10px 0;
   padding: 35px 15px 15px 15px;
-  background-color: #282c34 !important;
+  background-color: #282c34 !important; /* Mantenemos oscuros los bloques de código como estándar dev */
   border-radius: 6px;
   overflow-x: auto;
 }
@@ -367,7 +418,7 @@ main {
 }
 
 .message p > code {
-  background-color: #282c34;
+  background-color: var(--bg-main);
   padding: 2px 4px;
   border-radius: 4px;
   color: #e5c07b;
@@ -411,22 +462,22 @@ main {
   justify-content: space-between;
   align-items: center;
   padding: 5px 10px;
-  background-color: #1e1e1e;
+  background-color: var(--bg-main);
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .lang-label {
-  color: #abb2bf;
+  color: var(--text-agent);
   font-size: 0.8rem;
   font-weight: bold;
   text-transform: uppercase;
 }
 
 .copy-btn {
-  background-color: #3e4451;
-  color: #abb2bf;
+  background-color: var(--bg-hover);
+  color: var(--text-agent);
   border: none;
   border-radius: 4px;
   padding: 4px 8px;
@@ -461,14 +512,14 @@ main {
 }
 
 .delete-modal-content {
-  background-color: #2c3e50;
+  background-color: var(--bg-sidebar);
   padding: 20px 25px;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  color: white;
+  color: var(--text-main);
   text-align: center;
   transform: translateY(0);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .delete-modal.hidden .delete-modal-content {
@@ -512,4 +563,24 @@ main {
 
 .btn-confirm:hover {
   background-color: #ff2d2d;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  transition: background-color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--bg-hover);
 }
