@@ -13,6 +13,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Evitar FOUC (Pestañeo de Tema) -->
+  <script>
+    if (localStorage.getItem('app_theme') === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
 </head>
 <body>
   

@@ -8,12 +8,10 @@ window.onload = async () => {
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   const savedTheme = localStorage.getItem('app_theme') || 'dark';
   
-  // Aplicar tema guardado al cargar
+  // Como el tema ya se aplicó en el <head> para evitar FOUC,
+  // solo seteamos el icono inicial correcto.
   if (savedTheme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
     themeToggleBtn.textContent = '🌙';
-  } else {
-    document.documentElement.removeAttribute('data-theme');
   }
   
   // Evento de click para alternar
