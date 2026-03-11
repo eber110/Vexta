@@ -170,6 +170,9 @@ export class ChatController {
         // 1. Guardar mensaje del usuario
         await historyService.addMessage(sessionId, 'user', message);
         
+        // RECUPERAR HISTORIAL COMPLETO
+        const history = await historyService.getHistory(sessionId);
+        
         // 2. Transmitir como Server-Sent Events (SSE)
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
@@ -179,7 +182,7 @@ export class ChatController {
         
         let fullReply = '';
         
-        await llmService.generateStream(message, (chunk: string) => {
+        await llmService.generateStream(history, (chunk: string) => {
           
           fullReply += chunk;
           res.write(`data: ${JSON.stringify({ chunk })}\n\n`);

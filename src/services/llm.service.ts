@@ -2,7 +2,7 @@ import { llmConfig } from '../config/llm.config';
 
 export class LlmService {
   
-  async generateResponse( prompt: string ): Promise<string> {
+  async generateResponse( messages: {role: string, content: string}[] ): Promise<string> {
     
     if ( llmConfig.activeProvider !== 'ollama' ) {
       throw new Error( 'Proveedor de LLM no soportado o no configurado.' );
@@ -10,17 +10,24 @@ export class LlmService {
     
     return new Promise((resolve, reject) => {
       let full = '';
-      this.generateStream(prompt, (chunk) => {
+      this.generateStream(messages, (chunk) => {
         full += chunk;
       }).then(() => resolve(full)).catch(reject);
     });
     
   }
   
-  async generateStream( prompt: string, onChunk: (chunk: string) => void ): Promise<void> {
+  async generateStream( messages: {role: string, content: string}[], onChunk: (chunk: string) => void ): Promise<void> {
     
     const config = llmConfig.providers.ollama;
-    const url = `${config.baseUrl}/api/generate`;
+    const url = `${config.baseUrl}/api/chat`; // <-- Cambio a /api/chat
+    
+    // Mapeamos los roles, ya que Ollama espera "user", "assistant" o "system". 
+    // En nuestra DB guardamos "agent", hay que convertirlo a "assistant".
+    const mappedMessages = messages.map(msg => ({
+      role: msg.role === 'agent' ? 'assistant' : msg.role,
+      content: msg.content
+    }));
     
     try {
       
@@ -31,7 +38,7 @@ export class LlmService {
         },
         body: JSON.stringify({
           model: config.model,
-          prompt: prompt,
+          messages: mappedMessages, // <-- array de mensajes
           stream: true
         })
       });
@@ -57,11 +64,11 @@ export class LlmService {
           if (!line.trim()) continue;
           try {
             const parsed = JSON.parse(line);
-            if (parsed.response) {
-              onChunk(parsed.response);
+            if (parsed.message && parsed.message.content) { // <-- parsing para /api/chat
+              onChunk(parsed.message.content);
             }
           } catch (e) {
-            // Ignorar errores de parseo por chunks cortados (común en TCP local rápido)
+            // Ignorar errores de parseo por chunks
           }
         }
         
