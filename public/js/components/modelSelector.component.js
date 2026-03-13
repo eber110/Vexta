@@ -80,18 +80,16 @@ export const modelSelectorComponent = {
              selectWrapper.classList.remove('open');
              
              // Llamar backend
-             if (modelName !== activeModelToUse) { // Note that activeModelToUse is the one it was initialized with, we really should check chatComponent.currentModel
-                if (modelName !== chatComponent.currentModel) {
-                  try {
-                    await apiService.changeModel(modelName);
-                    chatComponent.appendMessage(`He cambiado al modelo: ${modelName}`, 'agent');
-                    
-                    chatComponent.currentModel = modelName;
-                    chatComponent.updateTokenGauge();
-                  } catch (err) {
-                    console.error('Error cambiando modelo:', err);
-                  }
-                }
+             if (modelName !== chatComponent.currentModel) {
+               try {
+                 await apiService.changeModel(modelName);
+                 chatComponent.appendMessage(`He cambiado al modelo: ${modelName}`, 'agent');
+                 
+                 chatComponent.currentModel = modelName;
+                 chatComponent.updateTokenGauge();
+               } catch (err) {
+                 console.error('Error cambiando modelo:', err);
+               }
              }
           });
           
