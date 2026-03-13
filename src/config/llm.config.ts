@@ -5,7 +5,7 @@ export const llmConfig = {
   providers: {
     ollama: {
       baseUrl: 'http://localhost:11434',
-      model: 'qwen2.5-coder:7b'
+      model: 'qwen3.5:9b'
     },
     gemini: {
       apiKey: '',
