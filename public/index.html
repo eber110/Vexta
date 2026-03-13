@@ -26,10 +26,18 @@
   <div class="app-layout">
     
     <!-- Barra Lateral -->
-    <aside id="sidebar" class="sidebar">
+    <aside id="sidebar" class="sidebar closed">
+      <div class="sidebar-top">
+        <button id="toggleSidebarBtn" class="toggle-sidebar-btn" title="Contraer/Expandir menú">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+      </div>
       <div class="sidebar-header">
-        <h2>Mis Chats</h2>
-        <button id="newChatBtn" class="new-chat-btn">+ Nuevo Chat</button>
+        <button id="newChatBtn" class="new-chat-btn" title="Nuevo Chat">
+          <svg class="new-chat-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          <span class="new-chat-text">Nuevo Chat</span>
+        </button>
+        <h2 class="sidebar-title">Mis Chats</h2>
       </div>
       <div id="sessionList" class="session-list">
         <!-- Opciones de historial dinámicas -->
@@ -39,7 +47,6 @@
     <!-- Contenedor Principal (Chat) -->
     <div class="app-container">
       <header>
-        <button id="toggleSidebarBtn" class="toggle-sidebar-btn">☰</button>
         <div class="header-titles">
           <h1>Agente Local</h1>
           <p>Potenciado por Ollama</p>

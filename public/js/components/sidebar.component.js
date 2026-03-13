@@ -101,8 +101,34 @@ export const sidebarComponent = {
         
       });
       
-      // Si no tenemos sesion activa, seleccionar la mas reciente
-      if (!this.activeSessionId && sessions.length > 0) {
+      // Lógica de Persistencia de Sesión
+      const savedSessionId = localStorage.getItem('active_session_id');
+      
+      // Chequeo 1: Si ya tenemos una activa en memoria (después de crear una nueva, por ejemplo)
+      if (this.activeSessionId) {
+        // No hacemos nada, switchSession ya se debió haber llamado
+      } 
+      // Chequeo 2: Si el usuario recargó la página y hay un ID guardado en localStorage
+      else if (savedSessionId) {
+        
+        // Verificamos si ese ID guardado todavía existe en la base de datos de verdad
+        const sessionExists = sessions.some(s => s.id === parseInt(savedSessionId));
+        
+        if (sessionExists) {
+          
+          this.switchSession(parseInt(savedSessionId));
+          
+        } else {
+          
+          // El chat guardado ya no existe (quizás lo borró), abrimos el primero
+          localStorage.removeItem('active_session_id');
+          this.switchSession(sessions[0].id);
+          
+        }
+        
+      }
+      // Chequeo 3: Ningún ID activo ni guardado, cargar el primero disponible por defecto
+      else if (sessions.length > 0) {
         
         this.switchSession(sessions[0].id);
         
@@ -141,6 +167,9 @@ export const sidebarComponent = {
     
     this.activeSessionId = sessionId;
     chatComponent.currentSessionId = sessionId;
+    
+    // Guardar en el navegador para que persista al recargar la página F5
+    localStorage.setItem('active_session_id', sessionId);
     
     // Quitar y poner clase active visualmente
     document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
