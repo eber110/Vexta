@@ -1,5 +1,5 @@
-import { apiService } from '../services/api.service.js?v=2';
-import { chatComponent } from './chat.component.js?v=2';
+import { apiService } from '../services/api.service.js';
+import { chatComponent } from './chat.component.js';
 
 export const modelSelectorComponent = {
   

@@ -1018,6 +1018,39 @@ main::-webkit-scrollbar {
   color: #ff4a4a;
 }
 
+/* Settings Input Styling */
+.input-row-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.input-row-settings input,
+#ollamaUrlInput {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: var(--bg-hover, #343541) !important;
+  color: var(--text-main, #ececf1) !important;
+  border: 1px solid #454752 !important;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-row-settings input:focus,
+#ollamaUrlInput:focus {
+  border-color: #10a37f !important;
+  background-color: var(--bg-hover, #343541) !important;
+}
+
+.input-row-settings input::placeholder,
+#ollamaUrlInput::placeholder {
+  color: #8e8ea0 !important;
+}
+
 /* Custom Model Selector */
 .custom-select-wrapper {
   position: relative;
