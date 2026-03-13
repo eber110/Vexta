@@ -115,6 +115,27 @@ export const apiService = {
     
     return await response.json();
     
+  },
+  
+  async fetchConfig() {
+    
+    const response = await fetch('/api/config');
+    if (!response.ok) throw new Error('Error al obtener la configuración');
+    return await response.json();
+    
+  },
+  
+  async saveConfig(ollamaUrl) {
+    
+    const response = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ollamaUrl })
+    });
+    
+    if (!response.ok) throw new Error('Error al guardar la configuración');
+    return await response.json();
+    
   }
   
 };

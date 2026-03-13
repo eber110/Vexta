@@ -2,6 +2,7 @@ import http from 'http';
 import { historyService } from '../services/history.service';
 import { LlmService } from '../services/llm.service';
 import { llmConfig } from '../config/llm.config';
+import { dbService } from '../services/db.service';
 
 const llmService = new LlmService();
 
@@ -236,6 +237,48 @@ export class ChatController {
       
     });
     
+  }
+  
+  // MÉTODOS DE CONFIGURACIÓN
+  
+  async getConfig(req: http.IncomingMessage, res: http.ServerResponse) {
+    try {
+      const ollamaUrlRow = await dbService.queryOne(`SELECT value FROM settings WHERE key = 'ollama_url'`);
+      const baseUrl = ollamaUrlRow ? ollamaUrlRow.value : llmConfig.providers.ollama.baseUrl;
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ollamaUrl: baseUrl }));
+    } catch (e) {
+      console.error('Error leyendo configuracion:', e);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Error leyendo configuración' }));
+    }
+  }
+
+  async updateConfig(req: http.IncomingMessage, res: http.ServerResponse) {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { ollamaUrl } = JSON.parse(body);
+        if (!ollamaUrl) {
+          res.writeHead(400);
+          return res.end(JSON.stringify({ error: 'La URL no puede estar vacía' }));
+        }
+
+        await dbService.run(`UPDATE settings SET value = ? WHERE key = 'ollama_url'`, [ollamaUrl]);
+        
+        // Actualizar en memoria
+        llmConfig.providers.ollama.baseUrl = ollamaUrl;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ollamaUrl }));
+      } catch (e) {
+        console.error('Error actualizando configuracion:', e);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Error actualizando configuración' }));
+      }
+    });
   }
   
 }

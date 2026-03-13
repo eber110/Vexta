@@ -1,5 +1,5 @@
-import { apiService } from '../services/api.service.js';
-import { chatComponent } from './chat.component.js';
+import { apiService } from '../services/api.service.js?v=2';
+import { chatComponent } from './chat.component.js?v=2';
 
 export const modelSelectorComponent = {
   
@@ -26,42 +26,97 @@ export const modelSelectorComponent = {
       
       if (data.models && data.models.length > 1) {
         
-        const select = document.createElement('select');
-        select.className = 'model-select';
+        // Crear Wrapper del Custom Select
+        const selectWrapper = document.createElement('div');
+        selectWrapper.className = 'custom-select-wrapper';
+        
+        // Botón (Valor Seleccionado)
+        const selectBtn = document.createElement('button');
+        selectBtn.className = 'custom-select-btn';
+        selectBtn.type = 'button'; // Evitar submit
+        
+        const selectValue = document.createElement('span');
+        selectValue.className = 'custom-select-value';
+        selectValue.style.pointerEvents = 'none';
+        selectValue.textContent = activeModelToUse;
+        
+        const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        chevron.setAttribute("viewBox", "0 0 24 24");
+        chevron.setAttribute("width", "16");
+        chevron.setAttribute("height", "16");
+        chevron.setAttribute("fill", "currentColor");
+        chevron.style.pointerEvents = 'none';
+        chevron.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+        chevron.classList.add('custom-select-icon');
+        
+        selectBtn.appendChild(selectValue);
+        selectBtn.appendChild(chevron);
+        
+        // Dropdown List (Opciones)
+        const dropdownList = document.createElement('ul');
+        dropdownList.className = 'custom-select-dropdown';
         
         data.models.forEach(modelName => {
+          const listItem = document.createElement('li');
+          listItem.textContent = modelName;
+          listItem.dataset.value = modelName;
           
-          const option = document.createElement('option');
-          option.value = modelName;
-          option.textContent = modelName;
           if (modelName === activeModelToUse) {
-            
-            option.selected = true;
-            
-          }
-          select.appendChild(option);
-          
-        });
-        
-        select.addEventListener('change', async (e) => {
-          
-          const newModel = e.target.value;
-          try {
-            
-            await apiService.changeModel(newModel);
-            chatComponent.appendMessage(`He cambiado al modelo: ${newModel}`, 'agent');
-            
-            // Actualizar el backend title indirectamente porque hay que refrescarlo pero lo ignoraremos
-            
-          } catch (err) {
-            
-            console.error('Error cambiando modelo:', err);
-            
+            listItem.classList.add('selected');
           }
           
+          listItem.addEventListener('click', async () => {
+             // Actualizar UI
+             selectValue.textContent = modelName;
+             
+             // Quitar 'selected' a todos y poner al actual
+             dropdownList.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+             listItem.classList.add('selected');
+             
+             // Cerrar dropdown
+             selectWrapper.classList.remove('open');
+             
+             // Llamar backend
+             if (modelName !== activeModelToUse) {
+                try {
+                  await apiService.changeModel(modelName);
+                  chatComponent.appendMessage(`He cambiado al modelo: ${modelName}`, 'agent');
+                } catch (err) {
+                  console.error('Error cambiando modelo:', err);
+                }
+             }
+          });
+          
+          dropdownList.appendChild(listItem);
         });
         
-        container.appendChild(select);
+        // Evento para abrir/cerrar dropdown
+        selectBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation(); 
+          
+          const isOpen = selectWrapper.classList.contains('open');
+          console.log(`[Selector] Click detectado. Estaba abierto: ${isOpen}`);
+          
+          // Cerrar otros si los hubiera
+          document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
+          
+          if (!isOpen) {
+             selectWrapper.classList.add('open');
+          }
+        });
+        
+        // Cerrar al clickear fuera
+        document.addEventListener('click', (e) => {
+           if (!selectWrapper.contains(e.target)) {
+              selectWrapper.classList.remove('open');
+           }
+        });
+        
+        selectWrapper.appendChild(selectBtn);
+        selectWrapper.appendChild(dropdownList);
+        
+        container.appendChild(selectWrapper);
         
       } else {
         

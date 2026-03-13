@@ -1,6 +1,7 @@
-import { chatComponent } from './js/components/chat.component.js';
-import { modelSelectorComponent } from './js/components/modelSelector.component.js';
-import { sidebarComponent } from './js/components/sidebar.component.js';
+import { chatComponent } from './js/components/chat.component.js?v=2';
+import { modelSelectorComponent } from './js/components/modelSelector.component.js?v=2';
+import { sidebarComponent } from './js/components/sidebar.component.js?v=2';
+import { settingsComponent } from './js/components/settings.component.js?v=2';
 
 window.onload = async () => {
   
@@ -29,6 +30,9 @@ window.onload = async () => {
     }
   });
   
+  
+  // Inicializamos Preferencias/Ajustes
+  settingsComponent.init();
   
   // Inicializamos la UI de chat
   chatComponent.init();

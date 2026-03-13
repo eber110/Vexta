@@ -3,6 +3,7 @@ import { chatController } from './controllers/chat.controller';
 import { modelController } from './controllers/model.controller';
 import { StaticServerUtil } from './utils/staticServer.util';
 import { dbService } from './services/db.service';
+import { llmConfig } from './config/llm.config';
 
 // Configuración inicial del puerto
 const PORT = 3005;
@@ -46,6 +47,14 @@ const server = http.createServer((req, res) => {
     return chatController.processChat(req, res);
   }
   
+  // Endpoint para configuraciones del agente
+  if (pathname === '/api/config' && req.method === 'GET') {
+    return chatController.getConfig(req, res);
+  }
+  if (pathname === '/api/config' && req.method === 'POST') {
+    return chatController.updateConfig(req, res);
+  }
+  
   // Si no es ninguna ruta de API, servimos los archivos estáticos
   StaticServerUtil.serveFile(req, res);
   
@@ -57,6 +66,14 @@ server.listen(PORT, async () => {
   try {
     
     await dbService.connect();
+    
+    // Cargar configuración de base de datos a la memoria de la app
+    const ollamaUrlRow = await dbService.queryOne(`SELECT value FROM settings WHERE key = 'ollama_url'`);
+    if (ollamaUrlRow && ollamaUrlRow.value) {
+      llmConfig.providers.ollama.baseUrl = ollamaUrlRow.value;
+      console.log(`[Config] URL de Ollama cargada: ${llmConfig.providers.ollama.baseUrl}`);
+    }
+    
     console.log(`Servidor de Agente inicializado en http://localhost:${PORT}`);
     
   } catch (err) {

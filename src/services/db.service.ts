@@ -51,8 +51,23 @@ export class DbService {
       )
     `;
     
+    const settingsTable = `
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `;
+    
     await this.run(sessionsTable);
     await this.run(messagesTable);
+    await this.run(settingsTable);
+    
+    // Inicializar ajustes por defecto si no existen
+    await this.run(`
+      INSERT OR IGNORE INTO settings (key, value)
+      VALUES ('ollama_url', 'http://localhost:11434')
+    `);
+    
     console.log('[DB Service] Tablas inicializadas u omitidas si ya existían.');
     
   }

@@ -6,7 +6,8 @@ export class StaticServerUtil {
   
   static serveFile(req: http.IncomingMessage, res: http.ServerResponse) {
     
-    let filePath = path.join(__dirname, '../../public', req.url === '/' ? 'index.html' : req.url || '');
+    const parsedUrl = req.url ? (req.url.split('?')[0] || '') : '';
+    let filePath = path.join(__dirname, '../../public', parsedUrl === '/' || parsedUrl === '' ? 'index.html' : parsedUrl);
     let extname = path.extname(filePath);
     let contentType = 'text/html';
     
