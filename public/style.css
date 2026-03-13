@@ -113,6 +113,7 @@ body {
   border-right: 1px solid var(--border-color); /* Separación sutil */
   overflow-x: hidden;
   white-space: nowrap;
+  z-index: 1000;
 }
 
 .sidebar.closed {
@@ -250,6 +251,24 @@ body {
   transition: background-color 0.3s ease;
 }
 
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
 header {
   background-color: var(--bg-header);
   color: var(--text-main);
@@ -259,6 +278,27 @@ header {
   gap: 15px;
   border-bottom: 1px solid var(--border-color);
   transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.hidden-desktop {
+  display: none !important;
+}
+
+.mobile-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.mobile-toggle-btn:hover {
+  background-color: var(--bg-hover);
 }
 
 .toggle-sidebar-btn {
@@ -378,7 +418,7 @@ main::-webkit-scrollbar {
 
 @media (max-width: 768px) {
   .chat-wrapper {
-    width: 100%;
+    width: 92%;
   }
 }
 
@@ -435,6 +475,7 @@ main::-webkit-scrollbar {
 
 .input-container {
   background-color: var(--bg-main);
+  /* filter: drop-shadow(0px -10px 10px var(--bg-main)); */
   position: sticky;
   bottom: 0;
   padding: 10px 0 20px 0;
@@ -512,11 +553,6 @@ main::-webkit-scrollbar {
 .icon-btn:hover, .send-btn-icon:hover {
   background-color: var(--bg-hover);
   color: var(--text-dim);
-}
-
-.send-btn-icon:hover {
-  color: white;
-  background-color: #005f9e; /* Se ilumina en azul al estilo de los envíos */
 }
 
 .tools-btn {
@@ -725,4 +761,72 @@ main::-webkit-scrollbar {
 
 .theme-toggle-btn:hover {
   background-color: var(--bg-hover);
+}
+
+/* Mobile Responsive Sidebar & Header */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    transform: translateX(0);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .sidebar.closed {
+    width: 260px; /* Ancho completo para que anime su salida */
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+  
+  /* Deshacer el modo "sólo íconos" en móvil, siempre se ven completos */
+  .sidebar-top, .sidebar-header, .new-chat-btn, .new-chat-btn .new-chat-text, .sidebar-title {
+    display: flex !important;
+  }
+  
+  /* Mantener forma natural de apilado para la lista */
+  .session-list {
+    display: block !important;
+  }
+  
+  .sidebar-top {
+    justify-content: flex-start !important;
+    padding: 15px 20px !important;
+  }
+  
+  .sidebar-header {
+    align-items: flex-start !important;
+    padding: 0 20px 20px 20px !important;
+  }
+  
+  .new-chat-btn {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 9999px !important;
+    padding: 12px 15px !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Ocultar la hamburguesa interna, mostrar solo la X */
+  .icon-menu {
+    display: none !important;
+  }
+  
+  /* Mostrar siempre las papeleras de borrado en táctil */
+  .delete-session-btn {
+    opacity: 1 !important;
+    background-color: transparent !important;
+  }
+  
+  .hidden-desktop {
+    display: flex !important;
+  }
+  
+  header {
+    padding: 1rem 1.2rem;
+    gap: 10px;
+  }
 }

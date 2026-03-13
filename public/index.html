@@ -25,11 +25,17 @@
   
   <div class="app-layout">
     
+    <!-- Overlay Oscuro para Móvil -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    
     <!-- Barra Lateral -->
     <aside id="sidebar" class="sidebar closed">
       <div class="sidebar-top">
         <button id="toggleSidebarBtn" class="toggle-sidebar-btn" title="Contraer/Expandir menú">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          <!-- Hamburger icon (Desktop) -->
+          <svg class="icon-menu" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          <!-- Close X icon (Mobile) -->
+          <svg class="icon-close hidden-desktop" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
       <div class="sidebar-header">
@@ -47,8 +53,11 @@
     <!-- Contenedor Principal (Chat) -->
     <div class="app-container">
       <header>
+        <button id="mobileToggleSidebarBtn" class="mobile-toggle-btn hidden-desktop" title="Abrir Menú">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
         <div class="header-titles">
-          <h1>Agente Local</h1>
+          <h1>Vexta chat</h1>
           <p>Potenciado por Ollama</p>
         </div>
         <button id="themeToggleBtn" class="theme-toggle-btn" title="Alternar Modo Oscuro/Claro">🌓</button>
@@ -63,21 +72,21 @@
           <div class="input-container">
             <div class="input-bubble">
               <div class="input-row">
-                <textarea id="userInput" rows="1" placeholder="Pregunta a Gemini 3..." autocomplete="off"></textarea>
+                <textarea id="userInput" rows="1" placeholder="Pregunta a Vexta..." autocomplete="off"></textarea>
               </div>
               <div class="input-tools-row">
                 <div class="tools-left">
-                  <button class="icon-btn hidden-mobile" title="Añadir"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
-                  <button class="tools-btn hidden-mobile" title="Herramientas">
+                  <!-- <button class="icon-btn hidden-mobile" title="Añadir"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button> -->
+                  <!-- <button class="tools-btn hidden-mobile" title="Herramientas">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> 
                     <span>Herramientas</span>
-                  </button>
+                  </button> -->
                 </div>
                 <div class="tools-right">
                   <div id="modelSelectorContainer" class="model-selector-container">
                     <!-- El selector o label se inyectará aquí dinámicamente -->
                   </div>
-                  <button class="icon-btn hidden-mobile" title="Micrófono"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+                  <!-- <button class="icon-btn hidden-mobile" title="Micrófono"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button> -->
                   <button id="sendBtn" class="send-btn-icon" title="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
                 </div>
               </div>

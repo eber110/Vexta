@@ -5,7 +5,9 @@ import { modelSelectorComponent } from './modelSelector.component.js';
 export const sidebarComponent = {
   
   sidebar: null,
+  overlay: null,
   toggleBtn: null,
+  mobileToggleBtn: null,
   newChatBtn: null,
   sessionList: null,
   activeSessionId: null,
@@ -13,13 +15,36 @@ export const sidebarComponent = {
   init() {
     
     this.sidebar = document.getElementById('sidebar');
+    this.overlay = document.getElementById('sidebarOverlay');
     this.toggleBtn = document.getElementById('toggleSidebarBtn');
+    this.mobileToggleBtn = document.getElementById('mobileToggleSidebarBtn');
     this.newChatBtn = document.getElementById('newChatBtn');
     this.sessionList = document.getElementById('sessionList');
     
     this.toggleBtn.addEventListener('click', () => {
       this.sidebar.classList.toggle('closed');
+      
+      // Controlar el overlay oscuro (solo se ve en mobile gracias al CSS)
+      if (!this.sidebar.classList.contains('closed')) {
+        this.overlay.classList.add('active');
+      } else {
+        this.overlay.classList.remove('active');
+      }
     });
+
+    // Cerrar sidebar al hacer clic fuera (en móvil)
+    this.overlay.addEventListener('click', () => {
+      this.sidebar.classList.add('closed');
+      this.overlay.classList.remove('active');
+    });
+    
+    // Botón de menú en el header (solo móvil)
+    if (this.mobileToggleBtn) {
+      this.mobileToggleBtn.addEventListener('click', () => {
+        this.sidebar.classList.remove('closed');
+        this.overlay.classList.add('active');
+      });
+    }
     
     this.newChatBtn.addEventListener('click', () => this.createNewSession());
     
