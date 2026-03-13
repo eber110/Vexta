@@ -136,19 +136,25 @@ export const sidebarComponent = {
       // Chequeo 2: Si el usuario recargó la página y hay un ID guardado en localStorage
       else if (savedSessionId) {
         
-        // Verificamos si ese ID guardado todavía existe en la base de datos de verdad
-        const sessionExists = sessions.some(s => s.id === parseInt(savedSessionId));
-        
-        if (sessionExists) {
-          
-          this.switchSession(parseInt(savedSessionId));
-          
+        if (savedSessionId === 'temp_new_session') {
+          // El usuario estaba en un chat temporal y refrescó la página.
+          // Lo mantenemos en su chat temporal para que no pierda ese estado.
+          await this.createNewSession();
         } else {
-          
-          // El chat guardado ya no existe (quizás lo borró), abrimos el primero
-          localStorage.removeItem('active_session_id');
-          this.switchSession(sessions[0].id);
-          
+          // Verificamos si ese ID guardado todavía existe en la base de datos de verdad
+          const sessionExists = sessions.some(s => s.id === parseInt(savedSessionId));
+        
+          if (sessionExists) {
+            
+            this.switchSession(parseInt(savedSessionId));
+            
+          } else {
+            
+            // El chat guardado ya no existe (quizás lo borró), abrimos el primero
+            localStorage.removeItem('active_session_id');
+            this.switchSession(sessions[0].id);
+            
+          }
         }
         
       }
@@ -169,20 +175,26 @@ export const sidebarComponent = {
   
   async createNewSession() {
     
+    // Si ya estamos en una nueva sesión en blanco, no hacer nada.
+    if (this.activeSessionId === 'temp_new_session') {
+      return;
+    }
+    
     try {
       
-      const newSession = await apiService.createSession();
-      this.activeSessionId = newSession.id;
-      chatComponent.currentSessionId = newSession.id;
+      // Asignar ID temporal para el cliente
+      this.activeSessionId = 'temp_new_session';
+      chatComponent.currentSessionId = 'temp_new_session';
       
       chatComponent.clearChat();
       chatComponent.appendMessage('Hola Eber, soy un nuevo chat vacío. ¿En qué te ayudo?', 'agent');
-      await this.loadSessions(); // Re-renderizar lista
-      await modelSelectorComponent.init(); // Recargar modelos selectores con el nuevo state
+      
+      // Limpiar clase .active visual del menú
+      document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
       
     } catch (e) {
       
-      console.error('Error creando nueva sesión:', e);
+      console.error('Error preparando nueva sesión local:', e);
       
     }
     

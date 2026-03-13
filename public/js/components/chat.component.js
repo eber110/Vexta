@@ -1,5 +1,6 @@
 import { formatMessage } from '../utils/markdown.util.js';
 import { apiService } from '../services/api.service.js';
+import { sidebarComponent } from './sidebar.component.js';
 
 export const chatComponent = {
   
@@ -145,13 +146,34 @@ export const chatComponent = {
   async handleSend() {
     
     const text = this.userInput.value.trim();
-    const sessionId = this.currentSessionId;
+    let sessionId = this.currentSessionId;
     
     if (text !== '') {
       
       if (!sessionId) {
         this.appendMessage('Por favor selecciona o crea un nuevo chat en el menú lateral antes de escribir.', 'agent');
         return;
+      }
+      
+      // Si estamos en un chat temporal vacío, creamos la sesión real en la DB ahora mismo
+      if (sessionId === 'temp_new_session') {
+        try {
+          const newSession = await apiService.createSession();
+          sessionId = newSession.id;
+          
+          // Actualizamos los estados en ambos componentes principales
+          this.currentSessionId = sessionId;
+          sidebarComponent.activeSessionId = sessionId;
+          
+          // Forzamos actualización visual del menú lateral y la caché local
+          localStorage.setItem('active_session_id', sessionId);
+          await sidebarComponent.loadSessions();
+          
+        } catch (err) {
+          console.error('Error al generar la sesión real en base al chat temporal:', err);
+          this.appendMessage('No se pudo establecer conexión para guardar este nuevo chat.', 'agent');
+          return;
+        }
       }
       
       this.appendMessage(text, 'user');
