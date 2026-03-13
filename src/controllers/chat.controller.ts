@@ -159,7 +159,7 @@ export class ChatController {
       
       try {
         
-        const { message, sessionId } = JSON.parse(body);
+        const { message, sessionId, useAgent } = JSON.parse(body);
         
         if (!message || !sessionId) {
           
@@ -200,7 +200,7 @@ export class ChatController {
         // Formatear para Ollama mapper
         const ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
         
-        // 2. Transmitir como Server-Sent Events (SSE)
+        // 2. Configurar cabeceras SSE
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -209,17 +209,46 @@ export class ChatController {
         
         let fullReply = '';
         
-        const metrics = await llmService.generateStream(ollamaHistory, (chunk: string) => {
-          
-          fullReply += chunk;
-          res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-          
-        });
+        // 3. Determinar si usar modo agente o modo chat normal
+        const isAgentMode = useAgent === true || llmConfig.agentMode;
         
-        // 3. Guardar mensaje completo final del agente y cerrar stream
-        await historyService.addMessage(sessionId, 'agent', fullReply);
-        res.write(`data: ${JSON.stringify({ done: true, metrics })}\n\n`);
-        res.end();
+        if (isAgentMode) {
+
+          console.log('[Agent] Modo agente activado para esta petición.');
+
+          const metrics = await llmService.generateAgentStream(
+
+            ollamaHistory,
+
+            (chunk: string) => {
+              fullReply += chunk;
+              res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+            },
+
+            // Callback cuando se ejecuta una herramienta
+            (toolName: string, toolResult: string) => {
+              res.write(`data: ${JSON.stringify({ toolCall: { name: toolName, result: toolResult } })}\n\n`);
+            }
+
+          );
+
+          await historyService.addMessage(sessionId, 'agent', fullReply);
+          res.write(`data: ${JSON.stringify({ done: true, metrics })}\n\n`);
+          res.end();
+
+        } else {
+
+          const metrics = await llmService.generateStream(ollamaHistory, (chunk: string) => {
+            fullReply += chunk;
+            res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+          });
+
+          // 4. Guardar mensaje completo final del agente y cerrar stream
+          await historyService.addMessage(sessionId, 'agent', fullReply);
+          res.write(`data: ${JSON.stringify({ done: true, metrics })}\n\n`);
+          res.end();
+
+        }
         
       } catch (error) {
         

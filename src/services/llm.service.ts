@@ -1,4 +1,7 @@
 import { llmConfig } from '../config/llm.config';
+import { AGENT_TOOLS } from '../tools/definitions.tool';
+import { executeTool } from '../tools/executor.tool';
+
 
 export class LlmService {
   
@@ -90,6 +93,106 @@ export class LlmService {
     
   }
   
+  // Loop de tool calling para el modo agente
+  async generateAgentStream(
+    messages: {role: string, content: string}[],
+    onChunk: (chunk: string) => void,
+    onToolCall?: (toolName: string, result: string) => void
+  ): Promise<any> {
+
+    const config = llmConfig.providers.ollama;
+    const url = `${config.baseUrl}/api/chat`;
+
+    // Mapear roles para Ollama
+    let agentMessages = messages.map(msg => ({
+      role: msg.role === 'agent' ? 'assistant' : msg.role,
+      content: msg.content
+    }));
+
+    const MAX_TOOL_LOOPS = 5;
+
+    for (let loop = 0; loop < MAX_TOOL_LOOPS; loop++) {
+
+      // Llamada al modelo con herramientas disponibles (sin stream para detectar tool_calls)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: config.model,
+          messages: agentMessages,
+          tools: AGENT_TOOLS,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama respondió con error: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      const assistantMsg = data.message;
+
+      // Si el modelo usó herramientas, ejecutarlas
+      if (assistantMsg?.tool_calls && assistantMsg.tool_calls.length > 0) {
+
+        // Agregar el mensaje del assistant con los tool_calls al historial
+        agentMessages.push({
+          role: 'assistant',
+          content: assistantMsg.content || ''
+        });
+
+        // Ejecutar cada herramienta y agregar resultados como mensajes "tool"
+        for (const tc of assistantMsg.tool_calls) {
+
+          const toolName: string = tc.function?.name ?? 'unknown';
+          const toolArgs: Record<string, any> = tc.function?.arguments ?? {};
+
+          console.log(`[Agent] Ejecutando herramienta: ${toolName}`, toolArgs);
+          const toolResult = await executeTool(toolName, toolArgs);
+
+          // Notificar al caller qué herramienta se ejecutó (para SSE de frontend)
+          if (onToolCall) {
+            onToolCall(toolName, toolResult);
+          }
+
+          // Agregar resultado de la herramienta al historial
+          agentMessages.push({
+            role: 'tool',
+            content: toolResult
+          });
+
+        }
+
+        // Continuar el loop para que el modelo procese los resultados
+        continue;
+
+      }
+
+      // Sin tool_calls: el modelo respondi텥 con texto final — hacer stream de esa respuesta
+      if (assistantMsg?.content) {
+
+        // Simular streaming del texto final chunk a chunk
+        const finalText: string = assistantMsg.content;
+        const words = finalText.split(' ');
+        for (const word of words) {
+          onChunk(word + ' ');
+        }
+
+      }
+
+      return {
+        prompt_eval_count: data.prompt_eval_count || 0,
+        eval_count: data.eval_count || 0
+      };
+
+    }
+
+    // Si se agotaron loops, responder con mensaje de error
+    onChunk('Error: el agente superó el número máximo de iteraciones de herramientas.');
+    return { prompt_eval_count: 0, eval_count: 0 };
+
+  }
+
   async extractSearchIntent( prompt: string ): Promise<string | null> {
     
     const config = llmConfig.providers.ollama;

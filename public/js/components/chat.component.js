@@ -7,9 +7,11 @@ export const chatComponent = {
   chatBox: null,
   userInput: null,
   sendBtn: null,
+  agentModeBtn: null,
   currentSessionId: null,
   currentModel: null,
   onMessageSent: null,
+  agentModeActive: false,
   
   init() {
     
@@ -32,6 +34,12 @@ export const chatComponent = {
       this.userInput.style.height = 'auto'; // Reiniciamos temporalmente
       this.userInput.style.height = (this.userInput.scrollHeight) + 'px';
     });
+
+    // Botón de modo agente
+    this.agentModeBtn = document.getElementById('agentModeBtn');
+    if (this.agentModeBtn) {
+      this.agentModeBtn.addEventListener('click', () => this.toggleAgentMode());
+    }
     
   },
   
@@ -39,6 +47,17 @@ export const chatComponent = {
     if (this.chatBox) {
       this.chatBox.innerHTML = '';
     }
+  },
+
+  toggleAgentMode() {
+
+    this.agentModeActive = !this.agentModeActive;
+
+    if (this.agentModeBtn) {
+      this.agentModeBtn.classList.toggle('active', this.agentModeActive);
+      this.agentModeBtn.title = this.agentModeActive ? 'Desactivar Modo Agente' : 'Activar Modo Agente';
+    }
+
   },
   
   appendMessage(text, sender, isThinking = false) {
@@ -143,6 +162,31 @@ export const chatComponent = {
     }, 50);
   },
   
+  appendToolCallNotice(toolName, toolResult) {
+
+    const div = document.createElement('div');
+    div.classList.add('tool-call-notice');
+
+    // Abreviar el resultado para el preview (máx 120 caracteres)
+    const preview = toolResult.length > 120
+      ? toolResult.slice(0, 120) + '…'
+      : toolResult;
+
+    div.innerHTML = `
+      <div class="tool-call-header">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+          <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+        </svg>
+        <span>Herramienta: <strong>${toolName}</strong></span>
+      </div>
+      <pre class="tool-call-result">${preview}</pre>
+    `;
+
+    this.chatBox.appendChild(div);
+    this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
+
+  },
+
   async handleSend() {
     
     const text = this.userInput.value.trim();
@@ -206,6 +250,12 @@ export const chatComponent = {
             if (!fullResponse) {
               this.updateAgentMessage(agentDiv, 'Error: ' + error.message);
             }
+          },
+          // useAgent flag
+          this.agentModeActive,
+          // onToolCall callback — muestra qué herramienta ejecutó el agente
+          (toolCall) => {
+            this.appendToolCallNotice(toolCall.name, toolCall.result);
           }
         );
         

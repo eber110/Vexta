@@ -1,6 +1,9 @@
 export const llmConfig = {
   
   activeProvider: 'ollama',
+
+  // Indica si el modo agente (tool calling) está activo
+  agentMode: false,
   
   providers: {
     ollama: {

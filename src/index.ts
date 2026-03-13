@@ -55,6 +55,13 @@ const server = http.createServer((req, res) => {
     return chatController.updateConfig(req, res);
   }
   
+  // Endpoint para activar/desactivar el modo agente
+  if (pathname === '/api/agent/toggle' && req.method === 'POST') {
+    llmConfig.agentMode = !llmConfig.agentMode;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ agentMode: llmConfig.agentMode }));
+  }
+  
   // Si no es ninguna ruta de API, servimos los archivos estáticos
   StaticServerUtil.serveFile(req, res);
   

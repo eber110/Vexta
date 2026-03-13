@@ -39,7 +39,7 @@ export const apiService = {
     
   },
   
-  async sendMessageStream(sessionId, text, onChunk, onDone, onError) {
+  async sendMessageStream(sessionId, text, onChunk, onDone, onError, useAgent = false, onToolCall = null) {
     if (!sessionId) throw new Error('No hay sesión activa seleccionada');
     
     try {
@@ -48,7 +48,7 @@ export const apiService = {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ sessionId, message: text })
+        body: JSON.stringify({ sessionId, message: text, useAgent })
       });
       
       if (!response.ok) {
@@ -74,6 +74,8 @@ export const apiService = {
                 const parsed = JSON.parse(part.substring(6));
                 if (parsed.chunk && onChunk) onChunk(parsed.chunk);
                 if (parsed.done && onDone) onDone(parsed.metrics);
+                // Evento de herramienta ejecutada por el agente
+                if (parsed.toolCall && onToolCall) onToolCall(parsed.toolCall);
               } catch (e) {
                 // Ignorar JSON parcial en medio del stream
               }
@@ -134,6 +136,14 @@ export const apiService = {
     });
     
     if (!response.ok) throw new Error('Error al guardar la configuración');
+    return await response.json();
+    
+  },
+
+  async toggleAgentMode() {
+    
+    const response = await fetch('/api/agent/toggle', { method: 'POST' });
+    if (!response.ok) throw new Error('Error al cambiar el modo agente');
     return await response.json();
     
   }
