@@ -12,14 +12,23 @@ export const chatComponent = {
   init() {
     
     this.chatBox = document.getElementById('chatBox');
+    this.mainContainer = document.querySelector('main');
     this.userInput = document.getElementById('userInput');
     this.sendBtn = document.getElementById('sendBtn');
     
     this.sendBtn.addEventListener('click', () => this.handleSend());
     this.userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      // Si se presiona Enter sin la tecla Shift, se envía el mensaje
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Evitamos el salto de línea por defecto
         this.handleSend();
       }
+    });
+    
+    // Auto redimensionar el textarea al escribir
+    this.userInput.addEventListener('input', () => {
+      this.userInput.style.height = 'auto'; // Reiniciamos temporalmente
+      this.userInput.style.height = (this.userInput.scrollHeight) + 'px';
     });
     
   },
@@ -54,7 +63,7 @@ export const chatComponent = {
     }
     
     this.chatBox.appendChild(div);
-    this.chatBox.scrollTop = this.chatBox.scrollHeight;
+    this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
     
     return div;
   },
@@ -67,7 +76,7 @@ export const chatComponent = {
     while (formattedContent.firstChild) {
       div.appendChild(formattedContent.firstChild);
     }
-    this.chatBox.scrollTop = this.chatBox.scrollHeight;
+    this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
     
   },
   
@@ -85,6 +94,7 @@ export const chatComponent = {
       
       this.appendMessage(text, 'user');
       this.userInput.value = '';
+      this.userInput.style.height = 'auto'; // Restauramos a altura default (1 línea)
       
       // Inyectar estado de "pensando..."
       const agentDiv = this.appendMessage('', 'agent', true);

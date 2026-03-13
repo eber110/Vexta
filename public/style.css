@@ -317,32 +317,44 @@ header p {
 }
 
 .model-select {
-  background-color: var(--bg-select);
-  color: var(--text-select);
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
   outline: none;
   cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.model-select:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-dim);
 }
 
 .model-select:focus {
-  border-color: #61afef;
+  background-color: var(--bg-hover);
 }
 
 .model-select option {
-  background-color: var(--bg-select);
+  background-color: var(--bg-sidebar);
   color: var(--text-agent);
 }
 
 main {
   flex: 1;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none; /* Oculta scrollbar en Firefox */
+  -ms-overflow-style: none; /* Oculta scrollbar en IE 10+ */
+}
+
+main::-webkit-scrollbar {
+  display: none; /* Oculta scrollbar en Edge, Chrome, Safari */
 }
 
 .chat-wrapper {
@@ -351,9 +363,10 @@ main {
   flex-direction: column;
   border-radius: 10%;
   gap: 15px;
-  min-height: 0;
+  min-height: max-content;
   width: 900px; /* Desktop por defecto */
   margin: 0 auto; /* Centrar horizontalmente */
+  padding: 20px 0 0 0;
 }
 
 /* Responsividad para Tablet y Móvil */
@@ -374,31 +387,27 @@ main {
   background-color: transparent;
   padding: 0;
   border: none;
-  overflow-y: auto;
+  overflow-y: visible;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Estilos personalizados para el scrollbar */
-.chat-history::-webkit-scrollbar,
+/* Estilos personalizados para el scrollbar (solo bloques de código) */
 .message pre::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.chat-history::-webkit-scrollbar-track,
 .message pre::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.chat-history::-webkit-scrollbar-thumb,
 .message pre::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 4px;
 }
 
-.chat-history::-webkit-scrollbar-thumb:hover,
 .message pre::-webkit-scrollbar-thumb:hover {
   background: #777;
 }
@@ -425,41 +434,115 @@ main {
 }
 
 .input-container {
+  background-color: var(--bg-main);
+  position: sticky;
+  bottom: 0;
+  padding: 10px 0 20px 0;
   display: flex;
-  gap: 10px;
-  background-color: transparent;
+  justify-content: center;
+  width: 100%;
+}
+
+.input-bubble {
+  width: 100%;
+  background-color: var(--bg-sidebar); /* Usa el color del sidebar para un contraste sutil */
+  border-radius: 26px;
+  padding: 15px 15px 8px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input-row {
+  display: flex;
+  width: 100%;
 }
 
 #userInput {
   flex: 1;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-input);
-  color: var(--text-input);
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
-}
-
-#userInput:focus {
-  border-color: var(--bg-message-user);
-}
-
-#sendBtn {
-  background-color: var(--bg-message-user);
-  color: white; /* Siempre blanco dentro del botón azul */
+  background-color: transparent;
+  color: var(--text-main);
   border: none;
-  border-radius: 8px;
-  padding: 0 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  font-size: 1.05rem;
+  font-family: inherit;
+  outline: none;
+  padding: 5px 10px;
+  resize: none;
+  overflow-y: auto;
+  min-height: 24px;
+  max-height: 160px; /* Alrededor de 7 líneas antes de habilitar scroll */
+  line-height: 1.4;
+  scrollbar-width: none; /* Oculta scrollbar en Firefox */
+  -ms-overflow-style: none; /* Oculta scrollbar en IE y Edge antiguo */
 }
 
-#sendBtn:hover {
-  background-color: #005f9e; /* Hover manual ya que el botón azul es fijo en ambos temas */
+#userInput::-webkit-scrollbar {
+  display: none; /* Oculta scrollbar en navegadores Webkit (Chrome, Safari, Edge moderno) */
+}
+
+#userInput::placeholder {
+  color: var(--text-muted);
+}
+
+.input-tools-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tools-left, .tools-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn, .send-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.icon-btn:hover, .send-btn-icon:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-dim);
+}
+
+.send-btn-icon:hover {
+  color: white;
+  background-color: #005f9e; /* Se ilumina en azul al estilo de los envíos */
+}
+
+.tools-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.tools-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-dim);
+}
+
+@media (max-width: 600px) {
+  .hidden-mobile {
+    display: none !important;
+  }
 }
 
 /* Estilos para Markdown y Bloques de Código */
