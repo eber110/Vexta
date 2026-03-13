@@ -17,7 +17,7 @@ export class LlmService {
     
   }
   
-  async generateStream( messages: {role: string, content: string}[], onChunk: (chunk: string) => void ): Promise<void> {
+  async generateStream( messages: {role: string, content: string}[], onChunk: (chunk: string) => void ): Promise<any> {
     
     const config = llmConfig.providers.ollama;
     const url = `${config.baseUrl}/api/chat`; // <-- Cambio a /api/chat
@@ -67,12 +67,19 @@ export class LlmService {
             if (parsed.message && parsed.message.content) { // <-- parsing para /api/chat
               onChunk(parsed.message.content);
             }
+            if (parsed.done) {
+              return {
+                prompt_eval_count: parsed.prompt_eval_count || 0,
+                eval_count: parsed.eval_count || 0
+              };
+            }
           } catch (e) {
             // Ignorar errores de parseo por chunks
           }
         }
         
       }
+      return { prompt_eval_count: 0, eval_count: 0 };
       
     } catch ( error ) {
       

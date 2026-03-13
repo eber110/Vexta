@@ -7,6 +7,7 @@ export const chatComponent = {
   userInput: null,
   sendBtn: null,
   currentSessionId: null,
+  currentModel: null,
   onMessageSent: null,
   
   init() {
@@ -80,6 +81,67 @@ export const chatComponent = {
     
   },
   
+  handleTokenMetrics(metrics) {
+    if (!this.currentModel || !this.currentModel.endsWith('-cloud')) return;
+    
+    const usedNow = (metrics.eval_count || 0) + (metrics.prompt_eval_count || 0);
+    
+    // Usar una clave de almacenamiento específica por modelo
+    const safeModelName = this.currentModel.replace(/[:.]/g, '_');
+    const storageKey = `vexta_cloud_tokens_${safeModelName}`;
+    let totalUsed = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    totalUsed += usedNow;
+    
+    localStorage.setItem(storageKey, totalUsed);
+    
+    this.updateTokenGauge();
+  },
+  
+  updateTokenGauge() {
+    const gaugeContainer = document.getElementById('tokenGaugeContainer');
+    if (!gaugeContainer) return;
+    
+    const gaugeText = document.getElementById('tokenGaugeText');
+    const gaugePath = document.getElementById('tokenGaugePath');
+    
+    if (!this.currentModel || !this.currentModel.endsWith('-cloud')) {
+      gaugeContainer.classList.add('hidden');
+      return;
+    }
+    
+    gaugeContainer.classList.remove('hidden');
+    
+    // Usar una clave de almacenamiento específica por modelo
+    const safeModelName = this.currentModel.replace(/[:.]/g, '_');
+    const storageKey = `vexta_cloud_tokens_${safeModelName}`;
+    const totalUsed = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    
+    // Límite de ejemplo (100,000 tokens)
+    const LIMIT = 100000; 
+    let percentage = (totalUsed / LIMIT) * 100;
+    if (percentage > 100) percentage = 100;
+    
+    let displayValue = totalUsed;
+    if (totalUsed >= 1000) {
+      displayValue = (totalUsed / 1000).toFixed(1).replace('.0', '') + 'k';
+    }
+    gaugeText.textContent = displayValue;
+    
+    // Force a small reflow if needed, or just set it:
+    gaugePath.style.transition = 'none';
+    gaugePath.setAttribute('stroke-dasharray', `0, 100`);
+    
+    // Allow the browser to register the 0 state before animating to the new percentage
+    setTimeout(() => {
+      gaugePath.style.transition = 'stroke-dasharray 0.8s ease-out, stroke 0.4s ease';
+      gaugePath.setAttribute('stroke-dasharray', `${percentage}, 100`);
+      
+      gaugePath.classList.remove('warning', 'danger');
+      if (percentage > 85) gaugePath.classList.add('danger');
+      else if (percentage > 60) gaugePath.classList.add('warning');
+    }, 50);
+  },
+  
   async handleSend() {
     
     const text = this.userInput.value.trim();
@@ -111,7 +173,10 @@ export const chatComponent = {
             this.updateAgentMessage(agentDiv, fullResponse);
           },
           // onDone callback
-          () => {
+          (metrics) => {
+            if (metrics) {
+              this.handleTokenMetrics(metrics);
+            }
             if (this.onMessageSent) this.onMessageSent(); 
           },
           // onError callback

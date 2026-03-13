@@ -209,7 +209,7 @@ export class ChatController {
         
         let fullReply = '';
         
-        await llmService.generateStream(ollamaHistory, (chunk: string) => {
+        const metrics = await llmService.generateStream(ollamaHistory, (chunk: string) => {
           
           fullReply += chunk;
           res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
@@ -218,7 +218,7 @@ export class ChatController {
         
         // 3. Guardar mensaje completo final del agente y cerrar stream
         await historyService.addMessage(sessionId, 'agent', fullReply);
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true, metrics })}\n\n`);
         res.end();
         
       } catch (error) {

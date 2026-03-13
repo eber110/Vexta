@@ -73,7 +73,7 @@ export const apiService = {
               try {
                 const parsed = JSON.parse(part.substring(6));
                 if (parsed.chunk && onChunk) onChunk(parsed.chunk);
-                if (parsed.done && onDone) onDone();
+                if (parsed.done && onDone) onDone(parsed.metrics);
               } catch (e) {
                 // Ignorar JSON parcial en medio del stream
               }

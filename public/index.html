@@ -90,6 +90,15 @@
                   </button> -->
                 </div>
                 <div class="tools-right">
+                  <div id="tokenGaugeContainer" class="token-gauge-container hidden" title="Uso de Tokens (Cloud)">
+                    <div class="gauge-wrapper">
+                      <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="circle" id="tokenGaugePath" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                      </svg>
+                      <span id="tokenGaugeText" class="token-gauge-text">0</span>
+                    </div>
+                  </div>
                   <div id="modelSelectorContainer" class="model-selector-container">
                     <!-- El selector o label se inyectará aquí dinámicamente -->
                   </div>
