@@ -39,10 +39,16 @@
         </button>
       </div>
       <div class="sidebar-header">
-        <button id="newChatBtn" class="new-chat-btn" title="Nuevo Chat">
-          <svg class="new-chat-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-          <span class="new-chat-text">Nuevo Chat</span>
-        </button>
+        <div class="sidebar-new-actions">
+          <button id="newChatBtn" class="new-chat-btn" title="Nuevo Chat">
+            <svg class="new-chat-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span class="new-chat-text">Nuevo Chat</span>
+          </button>
+          <button id="newProjectBtn" class="new-project-btn" title="Nuevo Proyecto">
+            <svg class="new-project-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            <span class="new-project-text">Nuevo Proyecto</span>
+          </button>
+        </div>
         <h2 class="sidebar-title">Mis Chats</h2>
       </div>
       <div id="sessionList" class="session-list">
@@ -67,6 +73,19 @@
         <div class="header-titles">
           <h1>Vexta chat</h1>
           <p>Potenciado por Ollama</p>
+        </div>
+        
+        <!-- UI de Carpeta Raíz para Proyectos -->
+        <div id="projectPathContainer" class="project-path-container hidden">
+          <div class="path-input-wrapper">
+            <button id="selectFolderBtn" class="select-folder-btn" title="Seleccionar carpeta gráficamente">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+            </button>
+            <input type="text" id="rootPathInput" placeholder="Configura la carpeta raíz (ej: C:/Proyectos/MiApp)" autocomplete="off" />
+            <button id="savePathBtn" class="save-path-btn" title="Guardar ruta">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </button>
+          </div>
         </div>
       </header>
       

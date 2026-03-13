@@ -1,6 +1,7 @@
 import http from 'http';
 import { chatController } from './controllers/chat.controller';
 import { modelController } from './controllers/model.controller';
+import { utilsController } from './controllers/utils.controller';
 import { StaticServerUtil } from './utils/staticServer.util';
 import { dbService } from './services/db.service';
 import { llmConfig } from './config/llm.config';
@@ -21,6 +22,19 @@ const server = http.createServer((req, res) => {
   
   if (pathname === '/api/sessions' && req.method === 'POST') {
     return chatController.createSession(req, res);
+  }
+
+  if (pathname === '/api/sessions/project' && req.method === 'POST') {
+    return chatController.createProjectSession(req, res);
+  }
+
+  if (pathname === '/api/sessions/root-path' && req.method === 'POST') {
+    return chatController.updateSessionRootPath(req, res);
+  }
+
+  // MÉTODOS DE UTILERÍA
+  if (pathname === '/api/utils/select-folder' && req.method === 'GET') {
+    return utilsController.selectFolder(req, res);
   }
   
   if (pathname === '/api/sessions' && req.method === 'DELETE') {

@@ -9,6 +9,7 @@ export const sidebarComponent = {
   toggleBtn: null,
   mobileToggleBtn: null,
   newChatBtn: null,
+  newProjectBtn: null,
   sessionList: null,
   activeSessionId: null,
   
@@ -19,6 +20,7 @@ export const sidebarComponent = {
     this.toggleBtn = document.getElementById('toggleSidebarBtn');
     this.mobileToggleBtn = document.getElementById('mobileToggleSidebarBtn');
     this.newChatBtn = document.getElementById('newChatBtn');
+    this.newProjectBtn = document.getElementById('newProjectBtn');
     this.sessionList = document.getElementById('sessionList');
     
     this.toggleBtn.addEventListener('click', () => {
@@ -47,6 +49,9 @@ export const sidebarComponent = {
     }
     
     this.newChatBtn.addEventListener('click', () => this.createNewSession());
+    if (this.newProjectBtn) {
+      this.newProjectBtn.addEventListener('click', () => this.createNewProjectSession());
+    }
     
     // Wire up chat event
     chatComponent.onMessageSent = () => this.loadSessions();
@@ -79,6 +84,14 @@ export const sidebarComponent = {
           
         }
         
+        const isProject = session.root_path !== null && session.root_path !== undefined;
+        
+        const typeIcon = document.createElement('span');
+        typeIcon.className = 'session-type-icon';
+        typeIcon.innerHTML = isProject 
+          ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>'
+          : '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
+
         const titleSpan = document.createElement('span');
         titleSpan.className = 'session-title';
         titleSpan.textContent = session.title;
@@ -120,6 +133,7 @@ export const sidebarComponent = {
           
         });
         
+        item.appendChild(typeIcon);
         item.appendChild(titleSpan);
         item.appendChild(deleteBtn);
         this.sessionList.appendChild(item);
@@ -187,6 +201,7 @@ export const sidebarComponent = {
       chatComponent.currentSessionId = 'temp_new_session';
       
       chatComponent.clearChat();
+      chatComponent.setProjectMode(null); // No es modo proyecto
       chatComponent.appendMessage('Hola Eber, soy un nuevo chat vacío. ¿En qué te ayudo?', 'agent');
       
       // Limpiar clase .active visual del menú
@@ -198,6 +213,22 @@ export const sidebarComponent = {
       
     }
     
+  },
+
+  async createNewProjectSession() {
+    
+    try {
+      const session = await apiService.createProjectSession();
+      this.activeSessionId = session.id;
+      chatComponent.currentSessionId = session.id;
+      
+      await this.loadSessions();
+      this.switchSession(session.id);
+      
+    } catch (e) {
+      console.error('Error creando proyecto:', e);
+    }
+
   },
   
   async switchSession(sessionId) {
@@ -234,6 +265,14 @@ export const sidebarComponent = {
         
         chatComponent.appendMessage('Chat histórico vacío.', 'agent');
         
+      }
+
+      // Configurar modo proyecto en el chat component
+      const session = (await apiService.getSessions()).find(s => s.id === sessionId);
+      if (session && (session.root_path !== null && session.root_path !== undefined)) {
+        chatComponent.setProjectMode(session.root_path);
+      } else {
+        chatComponent.setProjectMode(null);
       }
       
     } catch (error) {

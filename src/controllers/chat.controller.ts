@@ -46,6 +46,48 @@ export class ChatController {
     }
     
   }
+
+  async createProjectSession(req: http.IncomingMessage, res: http.ServerResponse) {
+    
+    try {
+      
+      const currentModel = llmConfig.providers.ollama.model;
+      const sessionId = await historyService.createSession('Nuevo Proyecto', currentModel, ''); // Root path vacío por defecto
+      
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ id: sessionId, title: 'Nuevo Proyecto', model: currentModel, root_path: '' }));
+      
+    } catch (e) {
+      
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Error creando el proyecto' }));
+      
+    }
+    
+  }
+
+  async updateSessionRootPath(req: http.IncomingMessage, res: http.ServerResponse) {
+    
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { sessionId, rootPath } = JSON.parse(body);
+        if (!sessionId) {
+          res.writeHead(400);
+          return res.end(JSON.stringify({ error: 'sessionId es requerido' }));
+        }
+
+        await historyService.updateSessionRootPath(Number(sessionId), rootPath);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Error actualizando carpeta raíz' }));
+      }
+    });
+    
+  }
   
   async deleteSession(req: http.IncomingMessage, res: http.ServerResponse) {
     
@@ -199,6 +241,13 @@ export class ChatController {
         
         // Formatear para Ollama mapper
         const ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
+        
+        // INYECTAR CONTEXTO DE PROYECTO (ROOT_PATH)
+        const session = await historyService.getSessionData(sessionId);
+        if (session && session.root_path) {
+          const projectContext = `CONTEXTO DEL PROYECTO: Estás trabajando en la carpeta raíz: "${session.root_path}". Todas las herramientas de archivos y comandos deben ejecutarse con este contexto si no se especifica otra ruta absoluta.`;
+          ollamaHistory.unshift({ role: 'system' as any, content: projectContext });
+        }
         
         // 2. Configurar cabeceras SSE
         res.writeHead(200, {

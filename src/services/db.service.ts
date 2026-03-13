@@ -61,6 +61,13 @@ export class DbService {
     await this.run(sessionsTable);
     await this.run(messagesTable);
     await this.run(settingsTable);
+
+    // Migración simple: intentar agregar root_path si no existe
+    try {
+      await this.run(`ALTER TABLE sessions ADD COLUMN root_path TEXT`);
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
     
     // Inicializar ajustes por defecto si no existen
     await this.run(`

@@ -12,6 +12,7 @@ export interface ChatSession {
   id: number;
   title: string;
   model: string | null;
+  root_path?: string | null;
   created_at?: string;
 }
 
@@ -21,24 +22,31 @@ export class HistoryService {
   
   async getSessions(): Promise<ChatSession[]> {
     
-    const sql = `SELECT id, title, model, created_at FROM sessions ORDER BY created_at DESC`;
+    const sql = `SELECT id, title, model, root_path, created_at FROM sessions ORDER BY created_at DESC`;
     return await dbService.query(sql);
     
   }
   
   async getSessionData(sessionId: number): Promise<ChatSession | null> {
     
-    const sql = `SELECT id, title, model, created_at FROM sessions WHERE id = ?`;
+    const sql = `SELECT id, title, model, root_path, created_at FROM sessions WHERE id = ?`;
     const row = await dbService.queryOne(sql, [sessionId]);
     return row || null;
     
   }
   
-  async createSession(title: string, model: string): Promise<number> {
+  async createSession(title: string, model: string, rootPath: string | null = null): Promise<number> {
     
-    const sql = `INSERT INTO sessions (title, model) VALUES (?, ?)`;
-    const result = await dbService.run(sql, [title, model]);
+    const sql = `INSERT INTO sessions (title, model, root_path) VALUES (?, ?, ?)`;
+    const result = await dbService.run(sql, [title, model, rootPath]);
     return result.lastID;
+    
+  }
+
+  async updateSessionRootPath(sessionId: number, rootPath: string | null): Promise<void> {
+    
+    const sql = `UPDATE sessions SET root_path = ? WHERE id = ?`;
+    await dbService.run(sql, [rootPath, sessionId]);
     
   }
   

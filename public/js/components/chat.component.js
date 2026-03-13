@@ -8,6 +8,10 @@ export const chatComponent = {
   userInput: null,
   sendBtn: null,
   agentModeBtn: null,
+  projectPathContainer: null,
+  rootPathInput: null,
+  selectFolderBtn: null,
+  savePathBtn: null,
   currentSessionId: null,
   currentModel: null,
   onMessageSent: null,
@@ -40,6 +44,20 @@ export const chatComponent = {
     if (this.agentModeBtn) {
       this.agentModeBtn.addEventListener('click', () => this.toggleAgentMode());
     }
+
+    // Configuración de proyecto
+    this.projectPathContainer = document.getElementById('projectPathContainer');
+    this.rootPathInput = document.getElementById('rootPathInput');
+    this.selectFolderBtn = document.getElementById('selectFolderBtn');
+    this.savePathBtn = document.getElementById('savePathBtn');
+
+    if (this.selectFolderBtn) {
+      this.selectFolderBtn.addEventListener('click', () => this.handleSelectFolder());
+    }
+
+    if (this.savePathBtn) {
+      this.savePathBtn.addEventListener('click', () => this.saveProjectRootPath());
+    }
     
   },
   
@@ -59,7 +77,54 @@ export const chatComponent = {
     }
 
   },
-  
+
+  setProjectMode(rootPath) {
+    if (!this.projectPathContainer) return;
+
+    if (rootPath !== null && rootPath !== undefined) {
+      this.projectPathContainer.classList.remove('hidden');
+      this.rootPathInput.value = rootPath;
+    } else {
+      this.projectPathContainer.classList.add('hidden');
+    }
+  },
+
+  async handleSelectFolder() {
+    try {
+      this.selectFolderBtn.disabled = true;
+      const result = await apiService.selectFolder();
+      
+      if (result && result.path) {
+        this.rootPathInput.value = result.path;
+      }
+    } catch (e) {
+      console.error('Error seleccionando carpeta:', e);
+    } finally {
+      this.selectFolderBtn.disabled = false;
+    }
+  },
+
+  async saveProjectRootPath() {
+    const path = this.rootPathInput.value.trim();
+    if (!this.currentSessionId || this.currentSessionId === 'temp_new_session') return;
+
+    try {
+      this.savePathBtn.disabled = true;
+      await apiService.updateSessionRootPath(this.currentSessionId, path);
+      
+      // Feedback visual rápido
+      const originalColor = this.savePathBtn.style.color;
+      this.savePathBtn.style.color = '#fff';
+      setTimeout(() => this.savePathBtn.style.color = originalColor, 1000);
+
+    } catch (e) {
+      console.error('Error guardando ruta:', e);
+      alert('Error al guardar la ruta raíz');
+    } finally {
+      this.savePathBtn.disabled = false;
+    }
+  },
+
   appendMessage(text, sender, isThinking = false) {
     
     const div = document.createElement('div');

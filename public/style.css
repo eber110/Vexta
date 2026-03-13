@@ -155,36 +155,53 @@ body {
   display: none;
 }
 
-.new-chat-btn {
+.sidebar-new-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
-  padding: 12px 15px;
+}
+
+.new-chat-btn, .new-project-btn {
+  width: 100%;
+  padding: 10px 15px;
   background-color: var(--bg-hover);
   color: var(--text-dim);
   border: none;
-  border-radius: 9999px; /* Aspecto de píldora como Gemini */
+  border-radius: 9999px; /* Aspecto de píldora */
   cursor: pointer;
   font-weight: bold;
-  font-size: 1.05rem;
-  transition: background-color 0.2s, width 0.3s ease, border-radius 0.3s ease;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.sidebar.closed .new-chat-btn {
+.new-project-btn {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+}
+
+.new-chat-btn:hover, .new-project-btn:hover {
+  background-color: var(--border-color);
+}
+
+.sidebar.closed .new-chat-btn, .sidebar.closed .new-project-btn {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  padding: 12px;
+  padding: 0;
   justify-content: center;
+  margin: 0 auto;
 }
 
-.sidebar.closed .new-chat-btn .new-chat-text {
+.sidebar.closed .new-chat-text, .sidebar.closed .new-project-text {
   display: none;
 }
 
-.new-chat-btn:hover {
-  background-color: var(--border-color);
+.sidebar.closed .sidebar-new-actions {
+  align-items: center;
 }
 
 .sidebar.closed .session-list {
@@ -1355,4 +1372,88 @@ main::-webkit-scrollbar {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   Configuración de Proyecto (Carpeta Raíz)
+   ======================================== */
+
+.project-path-container {
+  margin-left: 20px;
+  background-color: var(--bg-hover);
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.project-path-container.hidden {
+  display: none;
+}
+
+.path-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Reducido un poco */
+  width: 100%;
+}
+
+.select-folder-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.select-folder-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-dim);
+}
+
+.select-folder-btn svg {
+  color: inherit !important; /* Permitir que herede del botón */
+}
+
+#rootPathInput {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  width: 320px; /* Un poco más ancho */
+  outline: none;
+  font-family: 'Consolas', monospace;
+}
+
+#rootPathInput::placeholder {
+  color: #666;
+}
+
+.save-path-btn {
+  background: transparent;
+  border: none;
+  color: #22c55e;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.save-path-btn:hover {
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

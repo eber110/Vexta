@@ -15,6 +15,26 @@ export const apiService = {
     return await response.json();
     
   },
+
+  async createProjectSession() {
+    
+    const response = await fetch('/api/sessions/project', { method: 'POST' });
+    if (!response.ok) throw new Error('Error creando proyecto');
+    return await response.json();
+    
+  },
+
+  async updateSessionRootPath(sessionId, rootPath) {
+    
+    const response = await fetch('/api/sessions/root-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, rootPath })
+    });
+    if (!response.ok) throw new Error('Error actualizando carpeta raíz');
+    return await response.json();
+    
+  },
   
   async deleteSession(id) {
     
@@ -144,6 +164,14 @@ export const apiService = {
     
     const response = await fetch('/api/agent/toggle', { method: 'POST' });
     if (!response.ok) throw new Error('Error al cambiar el modo agente');
+    return await response.json();
+    
+  },
+
+  async selectFolder() {
+    
+    const response = await fetch('/api/utils/select-folder');
+    if (!response.ok) throw new Error('Error al abrir el selector de carpetas');
     return await response.json();
     
   }
