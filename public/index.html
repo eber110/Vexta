@@ -156,6 +156,7 @@
         <div class="settings-body">
           <ul class="settings-tabs">
             <li class="tab active" data-tab="general">General</li>
+            <li class="tab" data-tab="capabilities">Capacidades</li>
             <li class="tab" data-tab="ollama">Motor Ollama</li>
           </ul>
           
@@ -167,6 +168,73 @@
                 <div class="setting-row">
                   <label>Modo Oscuro</label>
                   <button id="themeToggleBtnSettings" class="theme-toggle-btn secondary-theme" title="Alternar Modo Oscuro/Claro">Alternar</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel Capacidades -->
+            <div id="panel-capabilities" class="panel">
+              <div class="setting-group">
+                <h3>Modelo y Razonamiento</h3>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <label>Ocultar Pensamiento (Deep Thinking)</label>
+                    <p class="setting-desc">Oculta los bloques de razonamiento interno de modelos como DeepSeek R1.</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="hideThinkingCheck">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="setting-group">
+                <h3>Herramientas Permitidas</h3>
+                <p class="setting-desc">Activa o desactiva funciones específicas del agente de forma individual.</p>
+                
+                <div class="capabilities-grid">
+                  <div class="cap-item">
+                    <label>Leer Archivos</label>
+                    <label class="switch">
+                      <input type="checkbox" id="cap-read_file" checked>
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="cap-item">
+                    <label>Escribir/Crear</label>
+                    <label class="switch">
+                      <input type="checkbox" id="cap-write_file" checked>
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="cap-item">
+                    <label>Listar Directorios</label>
+                    <label class="switch">
+                      <input type="checkbox" id="cap-list_directory" checked>
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="cap-item">
+                    <label>Ejecutar Comandos</label>
+                    <label class="switch">
+                      <input type="checkbox" id="cap-run_command" checked>
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="cap-item">
+                    <label>Búsqueda Web</label>
+                    <label class="switch">
+                      <input type="checkbox" id="cap-search_web" checked>
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="cap-item">
+                    <label>Leer URLs</label>
+                    <label class="switch">
+                      <input type="checkbox" id="cap-fetch_url_content" checked>
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

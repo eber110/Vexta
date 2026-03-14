@@ -2114,3 +2114,38 @@ h1, h2, h3, h4, h5, h6 {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+
+/* Thought Blocks (Reasoning) */
+.thought-block {
+  background: rgba(var(--accent-rgb), 0.05);
+  border-left: 3px solid var(--accent-color);
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.thought-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--accent-color);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+.thought-content {
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* Ocultar pensamientos si la clase está activa en el contenedor */
+.hide-thoughts .thought-block {
+  display: none !important;
+}

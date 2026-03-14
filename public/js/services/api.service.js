@@ -47,6 +47,16 @@ export const apiService = {
     return await response.json();
     
   },
+
+  async updateCapabilities(sessionId, capabilities) {
+    const response = await fetch('/api/sessions/capabilities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, capabilities })
+    });
+    if (!response.ok) throw new Error('Error actualizando capacidades');
+    return await response.json();
+  },
   
   async deleteSession(id) {
     

@@ -14,6 +14,7 @@ export interface ChatSession {
   model: string | null;
   root_path?: string | null;
   web_search_enabled: number;
+  capabilities?: string | null;
   created_at?: string;
 }
 
@@ -23,14 +24,14 @@ export class HistoryService {
   
   async getSessions(): Promise<ChatSession[]> {
     
-    const sql = `SELECT id, title, model, root_path, web_search_enabled, created_at FROM sessions ORDER BY created_at DESC`;
+    const sql = `SELECT id, title, model, root_path, web_search_enabled, capabilities, created_at FROM sessions ORDER BY created_at DESC`;
     return await dbService.query(sql);
     
   }
   
   async getSessionData(sessionId: number): Promise<ChatSession | null> {
     
-    const sql = `SELECT id, title, model, root_path, web_search_enabled, created_at FROM sessions WHERE id = ?`;
+    const sql = `SELECT id, title, model, root_path, web_search_enabled, capabilities, created_at FROM sessions WHERE id = ?`;
     const row = await dbService.queryOne(sql, [sessionId]);
     return row || null;
     
@@ -55,6 +56,13 @@ export class HistoryService {
     
     const sql = `UPDATE sessions SET web_search_enabled = ? WHERE id = ?`;
     await dbService.run(sql, [enabled ? 1 : 0, sessionId]);
+    
+  }
+
+  async updateSessionCapabilities(sessionId: number, capabilities: any): Promise<void> {
+    
+    const sql = `UPDATE sessions SET capabilities = ? WHERE id = ?`;
+    await dbService.run(sql, [JSON.stringify(capabilities), sessionId]);
     
   }
   

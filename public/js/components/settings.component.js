@@ -16,8 +16,12 @@ export const settingsComponent = {
     
     this.themeToggleBtn = document.getElementById('themeToggleBtnSettings');
     
+    this.hideThinkingCheck = document.getElementById('hideThinkingCheck');
+    this.capChecks = document.querySelectorAll('.capabilities-grid input[type="checkbox"]');
+    
     this.bindEvents();
     this.initThemeToggle();
+    this.initCapabilityEvents();
   },
   
   bindEvents() {
@@ -114,6 +118,74 @@ export const settingsComponent = {
         if(mainHeaderToggle) mainHeaderToggle.textContent = '🌙';
       }
     });
+  },
+
+  initCapabilityEvents() {
+    if (this.hideThinkingCheck) {
+      this.hideThinkingCheck.addEventListener('change', () => this.saveCapabilities());
+    }
+
+    this.capChecks.forEach(check => {
+      check.addEventListener('change', () => this.saveCapabilities());
+    });
+  },
+
+  async loadCapabilities(session) {
+    if (!session || !session.capabilities) {
+      // Default: todo activo
+      if (this.hideThinkingCheck) this.hideThinkingCheck.checked = false;
+      this.capChecks.forEach(c => c.checked = true);
+      return;
+    }
+
+    try {
+      const caps = typeof session.capabilities === 'string' 
+        ? JSON.parse(session.capabilities) 
+        : session.capabilities;
+      
+      if (this.hideThinkingCheck) {
+        this.hideThinkingCheck.checked = caps.hideThinking || false;
+      }
+
+      this.capChecks.forEach(check => {
+        const toolName = check.id.replace('cap-', '');
+        if (caps.tools && caps.tools[toolName] !== undefined) {
+          check.checked = caps.tools[toolName];
+        } else {
+          check.checked = true;
+        }
+      });
+    } catch (e) {
+      console.error('Error cargando capacidades:', e);
+    }
+  },
+
+  async saveCapabilities() {
+    const chatComp = (await import('./chat.component.js')).chatComponent;
+    const sessionId = chatComp.currentSessionId;
+    
+    // Si no hay sesión real, no persistimos nada
+    if (!sessionId || sessionId === 'temp_new_session') return;
+
+    const capabilities = {
+      hideThinking: this.hideThinkingCheck ? this.hideThinkingCheck.checked : false,
+      tools: {}
+    };
+
+    this.capChecks.forEach(check => {
+      const toolName = check.id.replace('cap-', '');
+      capabilities.tools[toolName] = check.checked;
+    });
+
+    try {
+      await apiService.updateCapabilities(sessionId, capabilities);
+      console.log('[Settings] Capacidades guardadas para sesión', sessionId);
+      
+      // Actualizar localmente si es necesario (ej: para ocultar pensamiento al vuelo)
+      chatComp.hideThinking = capabilities.hideThinking;
+    } catch (e) {
+      console.error('Error guardando capacidades:', e);
+    }
   }
   
 };

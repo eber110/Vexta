@@ -112,6 +112,28 @@ export class ChatController {
     });
     
   }
+
+  async updateCapabilities(req: http.IncomingMessage, res: http.ServerResponse) {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { sessionId, capabilities } = JSON.parse(body);
+        if (!sessionId) {
+          res.writeHead(400);
+          return res.end(JSON.stringify({ error: 'sessionId es requerido' }));
+        }
+
+        await historyService.updateSessionCapabilities(Number(sessionId), capabilities);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        console.error('Error actualizando capacidades:', e);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Error actualizando capacidades' }));
+      }
+    });
+  }
   
   async deleteSession(req: http.IncomingMessage, res: http.ServerResponse) {
     
@@ -282,6 +304,14 @@ export class ChatController {
         const isWebSearchActive = session ? session.web_search_enabled === 1 : false;
         const isAgentEnabled = isAgentMode; 
 
+        // Recuperar capacidades granulares (JSON)
+        let caps: any = {};
+        if (session && session.capabilities) {
+          try {
+            caps = JSON.parse(session.capabilities);
+          } catch (e) {}
+        }
+
         let ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
 
         // CONSOLIDAR PROMPTS DE SISTEMA
@@ -326,21 +356,33 @@ export class ChatController {
 
           console.log(`[Agent] Activando loop de herramientas. Agente: ${isAgentEnabled}, Web: ${isWebSearchActive}`);
 
-          // FILTRAR HERRAMIENTAS SEGÚN LOS BOTONES ACTIVOS
+          // FILTRAR HERRAMIENTAS SEGÚN LOS BOTONES ACTIVOS Y CAPACIDADES GRANULARES
           let toolsToUse: any[] = [];
           
           if (isAgentEnabled) {
             // Herramientas de archivos y comandos
-            toolsToUse.push(...AGENT_TOOLS.filter(t => 
-              ['read_file', 'write_file', 'list_directory', 'create_directory', 'run_command'].includes(t.function.name)
-            ));
+            const fileTools = ['read_file', 'write_file', 'list_directory', 'create_directory'];
+            const cmdTools = ['run_command'];
+
+            toolsToUse.push(...AGENT_TOOLS.filter(t => {
+              const name = t.function.name;
+              // Si la capacidad está definida explícitamente en el JSON, la respetamos
+              if (caps.tools && caps.tools[name] !== undefined) {
+                return caps.tools[name] === true;
+              }
+              return [...fileTools, ...cmdTools].includes(name);
+            }));
           }
           
           if (isWebSearchActive) {
             // Herramientas de internet
-            toolsToUse.push(...AGENT_TOOLS.filter(t => 
-              ['search_web', 'fetch_url_content'].includes(t.function.name)
-            ));
+            toolsToUse.push(...AGENT_TOOLS.filter(t => {
+              const name = t.function.name;
+              if (caps.tools && caps.tools[name] !== undefined) {
+                return caps.tools[name] === true;
+              }
+              return ['search_web', 'fetch_url_content'].includes(name);
+            }));
           }
 
           const metrics = await llmService.generateAgentStream(

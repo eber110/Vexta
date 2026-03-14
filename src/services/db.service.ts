@@ -37,6 +37,7 @@ export class DbService {
         title TEXT NOT NULL,
         model TEXT,
         web_search_enabled INTEGER DEFAULT 1,
+        capabilities TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `;
@@ -71,6 +72,11 @@ export class DbService {
     // Migración simple: intentar agregar web_search_enabled si no existe
     try {
       await this.run(`ALTER TABLE sessions ADD COLUMN web_search_enabled INTEGER DEFAULT 1`);
+    } catch (e) {}
+
+    // Migración simple: intentar agregar capabilities si no existe
+    try {
+      await this.run(`ALTER TABLE sessions ADD COLUMN capabilities TEXT`);
     } catch (e) {}
     
     // Inicializar ajustes por defecto si no existen

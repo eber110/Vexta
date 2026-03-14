@@ -17,6 +17,7 @@ export const chatComponent = {
   onMessageSent: null,
   agentModeActive: false,
   webSearchActive: true,
+  hideThinking: false,
   
   init() {
     
@@ -110,6 +111,13 @@ export const chatComponent = {
     if (this.currentSessionId && this.currentSessionId !== 'temp_new_session') {
       apiService.updateWebSearchStatus(this.currentSessionId, this.webSearchActive)
         .catch(err => console.error('Error guardando preferencia de búsqueda:', err));
+    }
+  },
+
+  setHideThinking(hide) {
+    this.hideThinking = hide;
+    if (this.chatBox) {
+      this.chatBox.classList.toggle('hide-thoughts', hide);
     }
   },
 

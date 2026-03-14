@@ -214,6 +214,29 @@ function processTables(container) {
 }
 
 /**
+ * Procesa bloques de razonamiento (<thought>...</thought> o similares)
+ */
+function processThoughts(container) {
+  // Regex para capturar contenido entre etiquetas <thought> o similares
+  const thoughtRegex = /<thought>([\s\S]*?)(?:<\/thought>|$)/gi;
+  let html = container.innerHTML;
+
+  const newHtml = html.replace(thoughtRegex, (_, content) => {
+    return `<div class="thought-block">
+      <div class="thought-header">
+        <span class="material-icons-outlined" style="font-size:14px">psychology</span>
+        Razonamiento Interno
+      </div>
+      <div class="thought-content">${content}</div>
+    </div>`;
+  });
+
+  if (html !== newHtml) {
+    container.innerHTML = newHtml;
+  }
+}
+
+/**
  * Función principal de formateo de mensajes.
  * Parsea Markdown y aplica todos los componentes ricos.
  */
@@ -278,6 +301,8 @@ export function formatMessage(text) {
   // 4. Tabs (<!-- tabs:start --> ... <!-- tabs:end -->)
   processTabs(tempDiv);
 
-  return tempDiv;
+  // 5. Bloques de Pensamiento / Razonamiento
+  processThoughts(tempDiv);
 
+  return tempDiv;
 }
