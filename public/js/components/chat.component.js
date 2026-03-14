@@ -64,6 +64,24 @@ export const chatComponent = {
     if (this.savePathBtn) {
       this.savePathBtn.addEventListener('click', () => this.saveProjectRootPath());
     }
+
+    // Modal de pantalla completa para tablas
+    this.fullscreenTableModal = document.getElementById('fullscreenTableModal');
+    const closeFullscreenBtn = document.getElementById('closeFullscreenTableBtn');
+
+    if (closeFullscreenBtn) {
+      closeFullscreenBtn.addEventListener('click', () => {
+        if (this.fullscreenTableModal) this.fullscreenTableModal.classList.add('hidden');
+      });
+    }
+
+    if (this.fullscreenTableModal) {
+      this.fullscreenTableModal.addEventListener('click', (e) => {
+        if (e.target === this.fullscreenTableModal) {
+          this.fullscreenTableModal.classList.add('hidden');
+        }
+      });
+    }
     
   },
   
@@ -324,6 +342,7 @@ export const chatComponent = {
           text, 
           // onChunk callback
           (chunk) => {
+            if (!chunk) return; // Ignorar heartbeats vacíos del servidor (matan la animación)
             fullResponse += chunk;
             this.updateAgentMessage(agentDiv, fullResponse);
           },
