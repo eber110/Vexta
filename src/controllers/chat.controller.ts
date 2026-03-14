@@ -3,6 +3,7 @@ import { historyService } from '../services/history.service';
 import { LlmService } from '../services/llm.service';
 import { llmConfig } from '../config/llm.config';
 import { dbService } from '../services/db.service';
+import { AGENT_TOOLS } from '../tools/definitions.tool';
 
 const llmService = new LlmService();
 
@@ -84,6 +85,29 @@ export class ChatController {
       } catch (e) {
         res.writeHead(500);
         res.end(JSON.stringify({ error: 'Error actualizando carpeta raíz' }));
+      }
+    });
+    
+  }
+
+  async updateWebSearchStatus(req: http.IncomingMessage, res: http.ServerResponse) {
+    
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { sessionId, enabled } = JSON.parse(body);
+        if (!sessionId) {
+          res.writeHead(400);
+          return res.end(JSON.stringify({ error: 'sessionId es requerido' }));
+        }
+
+        await historyService.updateWebSearchStatus(Number(sessionId), enabled);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Error actualizando estado de búsqueda web' }));
       }
     });
     
@@ -212,7 +236,20 @@ export class ChatController {
         
         // 1. Guardar mensaje del usuario
         await historyService.addMessage(sessionId, 'user', message);
+
+        // 2. ABRIR STREAM SSE INMEDIATAMENTE
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        });
         
+        // Enviar chunk vacío para confirmar conexión
+        res.write(`data: ${JSON.stringify({ chunk: '' })}\n\n`);
+
+        let fullReply = '';
+        const isAgentMode = useAgent === true || llmConfig.agentMode;
+
         // RECUPERAR HISTORIAL COMPLETO
         const history = await historyService.getHistory(sessionId);
         
@@ -240,30 +277,50 @@ export class ChatController {
         }
         
         // Formatear para Ollama mapper
-        const ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
-        
-        // INYECTAR CONTEXTO DE PROYECTO (ROOT_PATH)
+        let ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
+
+        // CONSOLIDAR PROMPTS DE SISTEMA
+        let systemPrompts: string[] = [];
+
+        // 1. Extraer system prompts previos (RAG, etc.) y limpiar el historial de ellos
+        ollamaHistory = ollamaHistory.filter(h => {
+          if (h.role === 'system') {
+            systemPrompts.push(h.content);
+            return false;
+          }
+          return true;
+        });
+
+        // 2. Prompt General del Agente (si aplica)
+        if (isAgentMode && (llmConfig as any).agentSystemPrompt) {
+          const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          systemPrompts.unshift(`FECHA ACTUAL: ${today}\n\n${(llmConfig as any).agentSystemPrompt}`);
+        }
+
+        // 3. Contexto de Proyecto (si existe)
         const session = await historyService.getSessionData(sessionId);
         if (session && session.root_path) {
-          const projectContext = `CONTEXTO DEL PROYECTO: Estás trabajando en la carpeta raíz: "${session.root_path}". Todas las herramientas de archivos y comandos deben ejecutarse con este contexto si no se especifica otra ruta absoluta.`;
-          ollamaHistory.unshift({ role: 'system' as any, content: projectContext });
+          systemPrompts.push(`CONTEXTO DEL PROYECTO: Estás trabajando en la carpeta raíz: "${session.root_path}". Todas las herramientas de archivos y comandos deben ejecutarse con este contexto si no se especifica otra ruta absoluta.`);
         }
-        
-        // 2. Configurar cabeceras SSE
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
-        });
-        
-        let fullReply = '';
-        
-        // 3. Determinar si usar modo agente o modo chat normal
-        const isAgentMode = useAgent === true || llmConfig.agentMode;
+
+        // Si hay prompts de sistema acumulados, los unimos y los ponemos al principio
+        if (systemPrompts.length > 0) {
+          ollamaHistory.unshift({ role: 'system' as any, content: systemPrompts.join('\n\n---\n\n') });
+        }
         
         if (isAgentMode) {
 
           console.log('[Agent] Modo agente activado para esta petición.');
+
+          // FILTRAR HERRAMIENTAS DE BÚSQUEDA WEB SI ESTÁ DESACTIVADO
+          const sessionData = await historyService.getSessionData(sessionId);
+          const isWebSearchEnabled = sessionData ? sessionData.web_search_enabled === 1 : true;
+          
+          let toolsToUse = AGENT_TOOLS;
+          if (!isWebSearchEnabled) {
+            console.log('[Agent] Búsqueda web desactivada. Filtrando herramientas de internet.');
+            toolsToUse = AGENT_TOOLS.filter(t => t.function.name !== 'search_web' && t.function.name !== 'fetch_url_content');
+          }
 
           const metrics = await llmService.generateAgentStream(
 
@@ -277,7 +334,9 @@ export class ChatController {
             // Callback cuando se ejecuta una herramienta
             (toolName: string, toolResult: string) => {
               res.write(`data: ${JSON.stringify({ toolCall: { name: toolName, result: toolResult } })}\n\n`);
-            }
+            },
+            
+            toolsToUse // Pasar herramientas filtradas
 
           );
 

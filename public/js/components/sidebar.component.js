@@ -12,6 +12,7 @@ export const sidebarComponent = {
   newProjectBtn: null,
   sessionList: null,
   activeSessionId: null,
+  webSearchActive: true,
   
   init() {
     
@@ -267,12 +268,18 @@ export const sidebarComponent = {
         
       }
 
-      // Configurar modo proyecto en el chat component
+      // Configurar modo proyecto y estado de búsqueda web
       const session = (await apiService.getSessions()).find(s => s.id === sessionId);
-      if (session && (session.root_path !== null && session.root_path !== undefined)) {
-        chatComponent.setProjectMode(session.root_path);
-      } else {
-        chatComponent.setProjectMode(null);
+      if (session) {
+        if (session.root_path !== null && session.root_path !== undefined) {
+          chatComponent.setProjectMode(session.root_path);
+        } else {
+          chatComponent.setProjectMode(null);
+        }
+        
+        // Actualizar estado de búsqueda web desde la sesión
+        chatComponent.webSearchActive = session.web_search_enabled === 1;
+        chatComponent.updateWebSearchUI();
       }
       
     } catch (error) {

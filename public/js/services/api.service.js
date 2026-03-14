@@ -35,6 +35,18 @@ export const apiService = {
     return await response.json();
     
   },
+
+  async updateWebSearchStatus(sessionId, enabled) {
+    
+    const response = await fetch('/api/sessions/web-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, enabled })
+    });
+    if (!response.ok) throw new Error('Error actualizando búsqueda web');
+    return await response.json();
+    
+  },
   
   async deleteSession(id) {
     
@@ -92,7 +104,7 @@ export const apiService = {
             if (part.startsWith('data: ')) {
               try {
                 const parsed = JSON.parse(part.substring(6));
-                if (parsed.chunk && onChunk) onChunk(parsed.chunk);
+                if (parsed.chunk !== undefined && onChunk) onChunk(parsed.chunk);
                 if (parsed.done && onDone) onDone(parsed.metrics);
                 // Evento de herramienta ejecutada por el agente
                 if (parsed.toolCall && onToolCall) onToolCall(parsed.toolCall);

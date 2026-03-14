@@ -19,6 +19,9 @@
   --text-user: #ffffff;
   --text-select: #98c379;
   --text-input: #333;
+  
+  --link-color: #4daaff;
+  --link-hover-color: #79b8ff;
 }
 
 /* Tema Claro */
@@ -42,6 +45,9 @@
   --text-user: #ffffff;
   --text-select: #059669;
   --text-input: #1f2937;
+  
+  --link-color: #007acc;
+  --link-hover-color: #005a9e;
 }
 
 * {
@@ -59,6 +65,18 @@ body {
   justify-content: center;
   align-items: center;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  text-decoration: none;
+  color: var(--link-hover-color);
 }
 
 /* Animaciones de Carga del LLM */
@@ -596,6 +614,53 @@ main::-webkit-scrollbar {
   .hidden-mobile {
     display: none !important;
   }
+}
+
+/* Botones de Modo Agente y Web Search */
+.agent-mode-btn, .web-search-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.agent-mode-btn:hover, .web-search-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-dim);
+}
+
+/* Agente Activo (Verde) */
+.agent-mode-btn.active {
+  background-color: #2ea44f;
+  border-color: #2ea44f;
+  color: white;
+}
+
+.agent-mode-btn.active:hover {
+  background-color: #2c974b;
+}
+
+/* Web Search Activo (Azul / Cian) */
+.web-search-btn.active {
+  background-color: #007acc;
+  border-color: #007acc;
+  color: white;
+}
+
+.web-search-btn.active:hover {
+  background-color: #0062a3;
+}
+
+.agent-mode-text, .web-search-text {
+  font-size: 0.85rem;
 }
 
 /* Estilos para Markdown y Bloques de Código */

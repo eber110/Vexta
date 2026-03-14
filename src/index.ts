@@ -32,6 +32,10 @@ const server = http.createServer((req, res) => {
     return chatController.updateSessionRootPath(req, res);
   }
 
+  if (pathname === '/api/sessions/web-search' && req.method === 'POST') {
+    return chatController.updateWebSearchStatus(req, res);
+  }
+
   // MÉTODOS DE UTILERÍA
   if (pathname === '/api/utils/select-folder' && req.method === 'GET') {
     return utilsController.selectFolder(req, res);

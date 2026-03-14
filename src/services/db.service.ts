@@ -36,6 +36,7 @@ export class DbService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         model TEXT,
+        web_search_enabled INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `;
@@ -65,9 +66,12 @@ export class DbService {
     // Migración simple: intentar agregar root_path si no existe
     try {
       await this.run(`ALTER TABLE sessions ADD COLUMN root_path TEXT`);
-    } catch (e) {
-      // Ignorar si la columna ya existe
-    }
+    } catch (e) {}
+
+    // Migración simple: intentar agregar web_search_enabled si no existe
+    try {
+      await this.run(`ALTER TABLE sessions ADD COLUMN web_search_enabled INTEGER DEFAULT 1`);
+    } catch (e) {}
     
     // Inicializar ajustes por defecto si no existen
     await this.run(`

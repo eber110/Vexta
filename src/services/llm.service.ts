@@ -97,14 +97,15 @@ export class LlmService {
   async generateAgentStream(
     messages: {role: string, content: string}[],
     onChunk: (chunk: string) => void,
-    onToolCall?: (toolName: string, result: string) => void
+    onToolCall?: (toolName: string, result: string) => void,
+    tools: any[] = AGENT_TOOLS
   ): Promise<any> {
 
     const config = llmConfig.providers.ollama;
     const url = `${config.baseUrl}/api/chat`;
 
-    // Mapear roles para Ollama
-    let agentMessages = messages.map(msg => ({
+    // Mapear roles para Ollama. Usamos any[] para el historial interno para permitir tool_calls y tool_call_id
+    let agentMessages: any[] = messages.map(msg => ({
       role: msg.role === 'agent' ? 'assistant' : msg.role,
       content: msg.content
     }));
@@ -113,6 +114,9 @@ export class LlmService {
 
     for (let loop = 0; loop < MAX_TOOL_LOOPS; loop++) {
 
+      // Señal de vida para el frontend antes de la llamada pesada
+      onChunk('');
+
       // Llamada al modelo con herramientas disponibles (sin stream para detectar tool_calls)
       const response = await fetch(url, {
         method: 'POST',
@@ -120,7 +124,7 @@ export class LlmService {
         body: JSON.stringify({
           model: config.model,
           messages: agentMessages,
-          tools: AGENT_TOOLS,
+          tools: tools,
           stream: false
         })
       });
@@ -138,7 +142,8 @@ export class LlmService {
         // Agregar el mensaje del assistant con los tool_calls al historial
         agentMessages.push({
           role: 'assistant',
-          content: assistantMsg.content || ''
+          content: assistantMsg.content || '',
+          tool_calls: assistantMsg.tool_calls
         });
 
         // Ejecutar cada herramienta y agregar resultados como mensajes "tool"
@@ -158,8 +163,9 @@ export class LlmService {
           // Agregar resultado de la herramienta al historial
           agentMessages.push({
             role: 'tool',
-            content: toolResult
-          });
+            content: toolResult,
+            tool_call_id: tc.id || ''
+          } as any);
 
         }
 
@@ -168,14 +174,14 @@ export class LlmService {
 
       }
 
-      // Sin tool_calls: el modelo respondi텥 con texto final — hacer stream de esa respuesta
+      // Sin tool_calls: el modelo respondió con texto final — hacer stream de esa respuesta
       if (assistantMsg?.content) {
 
-        // Simular streaming del texto final chunk a chunk
+        // Simular streaming del texto final chunk a chunk para que la UI sea fluida
         const finalText: string = assistantMsg.content;
-        const words = finalText.split(' ');
-        for (const word of words) {
-          onChunk(word + ' ');
+        const chunks = finalText.split(/(?<=\s)/); 
+        for (const chunk of chunks) {
+          onChunk(chunk);
         }
 
       }

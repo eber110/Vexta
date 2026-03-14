@@ -16,6 +16,7 @@ export const chatComponent = {
   currentModel: null,
   onMessageSent: null,
   agentModeActive: false,
+  webSearchActive: true,
   
   init() {
     
@@ -39,10 +40,15 @@ export const chatComponent = {
       this.userInput.style.height = (this.userInput.scrollHeight) + 'px';
     });
 
-    // Botón de modo agente
     this.agentModeBtn = document.getElementById('agentModeBtn');
     if (this.agentModeBtn) {
       this.agentModeBtn.addEventListener('click', () => this.toggleAgentMode());
+    }
+
+    // Botón de búsqueda web
+    this.webSearchToggleBtn = document.getElementById('webSearchToggleBtn');
+    if (this.webSearchToggleBtn) {
+      this.webSearchToggleBtn.addEventListener('click', () => this.toggleWebSearch());
     }
 
     // Configuración de proyecto
@@ -76,6 +82,24 @@ export const chatComponent = {
       this.agentModeBtn.title = this.agentModeActive ? 'Desactivar Modo Agente' : 'Activar Modo Agente';
     }
 
+  },
+
+  toggleWebSearch() {
+    this.webSearchActive = !this.webSearchActive;
+    this.updateWebSearchUI();
+    
+    // Guardar preferencia si hay una sesión activa
+    if (this.currentSessionId && this.currentSessionId !== 'temp_new_session') {
+      apiService.updateWebSearchStatus(this.currentSessionId, this.webSearchActive)
+        .catch(err => console.error('Error guardando preferencia de búsqueda:', err));
+    }
+  },
+
+  updateWebSearchUI() {
+    if (this.webSearchToggleBtn) {
+      this.webSearchToggleBtn.classList.toggle('active', this.webSearchActive);
+      this.webSearchToggleBtn.title = this.webSearchActive ? 'Desactivar Búsqueda Web' : 'Activar Búsqueda Web';
+    }
   },
 
   setProjectMode(rootPath) {

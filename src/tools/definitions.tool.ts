@@ -97,6 +97,42 @@ export const AGENT_TOOLS = [
         required: ['command']
       }
     }
+  },
+
+  {
+    type: 'function',
+    function: {
+      name: 'search_web',
+      description: 'Busca información en internet sobre un tema específico y devuelve los títulos y fragmentos de los resultados más relevantes.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'La consulta de búsqueda (ej: "últimas noticias de JavaScript 2024").'
+          }
+        },
+        required: ['query']
+      }
+    }
+  },
+
+  {
+    type: 'function',
+    function: {
+      name: 'fetch_url_content',
+      description: 'Descarga el contenido de una URL específica y lo devuelve en formato de texto limpio (Markdown) para su análisis.',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            description: 'La URL completa del sitio web a leer (ej: "https://nodejs.org/en/about").'
+          }
+        },
+        required: ['url']
+      }
+    }
   }
 
 ];
