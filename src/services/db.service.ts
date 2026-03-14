@@ -76,7 +76,13 @@ export class DbService {
     // Inicializar ajustes por defecto si no existen
     await this.run(`
       INSERT OR IGNORE INTO settings (key, value)
-      VALUES ('ollama_url', 'http://localhost:11434')
+      VALUES ('ollama_url', 'http://127.0.0.1:11434')
+    `);
+
+    // Forzar cambio de localhost a 127.0.0.1 en instalaciones existentes para evitar errores de IPv6
+    await this.run(`
+      UPDATE settings SET value = 'http://127.0.0.1:11434' 
+      WHERE key = 'ollama_url' AND value = 'http://localhost:11434'
     `);
     
     console.log('[DB Service] Tablas inicializadas u omitidas si ya existían.');

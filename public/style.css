@@ -284,6 +284,7 @@ a:hover {
   height: 100%;
   position: relative;
   transition: background-color 0.3s ease;
+  min-width: 0; /* Crucial para que flex-grow no cause desbordamiento */
 }
 
 .sidebar-overlay {
@@ -439,6 +440,7 @@ main::-webkit-scrollbar {
   gap: 15px;
   min-height: max-content;
   width: 900px;
+  max-width: 100%; /* Garantía de no desbordamiento */
   margin: 0 auto;
   padding: 20px 0 0 0;
 }
@@ -1848,14 +1850,47 @@ main::-webkit-scrollbar {
    ================================================ */
 @media (min-width: 769px) and (max-width: 1024px) {
 
+  .app-container {
+    width: 100%;
+    min-width: 0;
+  }
+
   .chat-wrapper {
     width: 95% !important;
+    max-width: 100%;
   }
 
   .message {
     max-width: 85%;
   }
+  
+  /* Reducir gap en el header para ahorrar espacio */
+  header {
+    padding: 1rem 1.5rem;
+    gap: 10px;
+  }
 
+  /* --- Toolbar inferior adaptable --- */
+  .input-tools-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tools-left {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* El selector de modelo puede comprimirse si el sidebar está abierto */
+  .model-selector-container {
+    max-width: 200px;
+  }
+}
+
+/* --- Parches globales de overflow --- */
+h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Token Gauge (Cloud Models) */

@@ -291,10 +291,12 @@ export class ChatController {
           return true;
         });
 
-        // 2. Prompt General del Agente (si aplica)
-        if (isAgentMode && (llmConfig as any).agentSystemPrompt) {
-          const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-          systemPrompts.unshift(`FECHA ACTUAL: ${today}\n\n${(llmConfig as any).agentSystemPrompt}`);
+        // 2. Prompt General (Agente o Base)
+        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const systemPromptToUse = isAgentMode ? (llmConfig as any).agentSystemPrompt : (llmConfig as any).baseSystemPrompt;
+
+        if (systemPromptToUse) {
+          systemPrompts.unshift(`FECHA ACTUAL: ${today}\n\n${systemPromptToUse}`);
         }
 
         // 3. Contexto de Proyecto (si existe)

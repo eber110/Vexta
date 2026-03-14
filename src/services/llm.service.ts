@@ -25,12 +25,26 @@ export class LlmService {
     const config = llmConfig.providers.ollama;
     const url = `${config.baseUrl}/api/chat`; // <-- Cambio a /api/chat
     
-    // Mapeamos los roles, ya que Ollama espera "user", "assistant" o "system". 
-    // En nuestra DB guardamos "agent", hay que convertirlo a "assistant".
-    const mappedMessages = messages.map(msg => ({
-      role: msg.role === 'agent' ? 'assistant' : msg.role,
-      content: msg.content
-    }));
+    // Mapeamos los roles y consolidamos múltiples mensajes de sistema al principio
+    let systemContent = '';
+    const filteredMessages: {role: string, content: string}[] = [];
+
+    for (const msg of messages) {
+      if (msg.role === 'system') {
+        systemContent += (systemContent ? '\n\n' : '') + msg.content;
+      } else {
+        filteredMessages.push({
+          role: msg.role === 'agent' ? 'assistant' : msg.role,
+          content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)
+        });
+      }
+    }
+
+    const mappedMessages = [];
+    if (systemContent) {
+      mappedMessages.push({ role: 'system', content: systemContent });
+    }
+    mappedMessages.push(...filteredMessages);
     
     try {
       
@@ -41,15 +55,16 @@ export class LlmService {
         },
         body: JSON.stringify({
           model: config.model,
-          messages: mappedMessages, // <-- array de mensajes
-          stream: true
+          messages: mappedMessages,
+          stream: true,
+          options: config.options // <-- Parámetros de temperatura, top_p, etc.
         })
       });
       
       if ( !response.ok ) {
-        
-        throw new Error( `Ollama respondió con error: ${response.statusText}` );
-        
+        const errorBody = await response.text();
+        console.error(`[Ollama] Error ${response.status}: ${errorBody}`);
+        throw new Error( `Ollama respondió con error: ${response.status} - ${errorBody}` );
       }
       
       const reader = response.body?.getReader();
@@ -104,11 +119,26 @@ export class LlmService {
     const config = llmConfig.providers.ollama;
     const url = `${config.baseUrl}/api/chat`;
 
-    // Mapear roles para Ollama. Usamos any[] para el historial interno para permitir tool_calls y tool_call_id
-    let agentMessages: any[] = messages.map(msg => ({
-      role: msg.role === 'agent' ? 'assistant' : msg.role,
-      content: msg.content
-    }));
+    // Mapear roles y consolidar mensajes de sistema para el historial inicial del agente
+    let systemContent = '';
+    const filteredMessages: any[] = [];
+
+    for (const msg of messages) {
+      if (msg.role === 'system') {
+        systemContent += (systemContent ? '\n\n' : '') + msg.content;
+      } else {
+        filteredMessages.push({
+          role: msg.role === 'agent' ? 'assistant' : msg.role,
+          content: msg.content
+        });
+      }
+    }
+
+    let agentMessages: any[] = [];
+    if (systemContent) {
+      agentMessages.push({ role: 'system', content: systemContent });
+    }
+    agentMessages.push(...filteredMessages);
 
     const MAX_TOOL_LOOPS = 5;
 
@@ -116,6 +146,8 @@ export class LlmService {
 
       // Señal de vida para el frontend antes de la llamada pesada
       onChunk('');
+
+      console.log(`[Agent Loop ${loop}] Enviando a Ollama:`, JSON.stringify(agentMessages, null, 2));
 
       // Llamada al modelo con herramientas disponibles (sin stream para detectar tool_calls)
       const response = await fetch(url, {
@@ -125,15 +157,19 @@ export class LlmService {
           model: config.model,
           messages: agentMessages,
           tools: tools,
-          stream: false
+          stream: false,
+          options: config.options // <-- Parámetros para modo agente
         })
       });
 
       if (!response.ok) {
-        throw new Error(`Ollama respondió con error: ${response.statusText}`);
+        const errorBody = await response.text();
+        console.error(`[Ollama Agent] Error ${response.status}: ${errorBody}`);
+        throw new Error(`Ollama respondió con error: ${response.status} - ${errorBody}`);
       }
 
       const data: any = await response.json();
+      console.log(`[Agent Loop ${loop}] Respuesta de Ollama:`, JSON.stringify(data, null, 2));
       const assistantMsg = data.message;
 
       // Si el modelo usó herramientas, ejecutarlas
@@ -224,7 +260,8 @@ export class LlmService {
             { role: 'user', content: prompt }
           ],
           stream: false,
-          format: 'json' // Obligado a JSON (Ollama soporta este flag en varios modelos)
+          format: 'json',
+          options: config.options // <-- Parámetros para extracción de intención
         })
       });
       
