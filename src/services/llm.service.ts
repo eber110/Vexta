@@ -71,18 +71,31 @@ export class LlmService {
       if (!reader) throw new Error('No se pudo obtener el stream de lectura de Ollama');
       
       const decoder = new TextDecoder();
+      let buffer = '';
       
       while (true) {
         
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Procesar cualquier resto en el buffer si existe
+          if (buffer.trim()) {
+            try {
+              const parsed = JSON.parse(buffer);
+              if (parsed.message?.content) onChunk(parsed.message.content);
+            } catch (e) {}
+          }
+          break;
+        }
         
-        const lines = decoder.decode(value, { stream: true }).split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // El último elemento puede estar incompleto
+        
         for (const line of lines) {
           if (!line.trim()) continue;
           try {
             const parsed = JSON.parse(line);
-            if (parsed.message && parsed.message.content) { // <-- parsing para /api/chat
+            if (parsed.message && parsed.message.content) { 
               onChunk(parsed.message.content);
             }
             if (parsed.done) {
@@ -92,7 +105,7 @@ export class LlmService {
               };
             }
           } catch (e) {
-            // Ignorar errores de parseo por chunks
+            // Ignorar errores de parseo por chunks incompletos
           }
         }
         
@@ -210,22 +223,10 @@ export class LlmService {
 
       }
 
-      // Sin tool_calls: el modelo respondió con texto final — hacer stream de esa respuesta
-      if (assistantMsg?.content) {
-
-        // Simular streaming del texto final chunk a chunk para que la UI sea fluida
-        const finalText: string = assistantMsg.content;
-        const chunks = finalText.split(/(?<=\s)/); 
-        for (const chunk of chunks) {
-          onChunk(chunk);
-        }
-
-      }
-
-      return {
-        prompt_eval_count: data.prompt_eval_count || 0,
-        eval_count: data.eval_count || 0
-      };
+      // Sin tool_calls: el modelo respondió con el texto final o decidió no usar herramientas
+      // Para mostrar streaming real, llamamos a generateStream con el historial acumulado
+      console.log(`[Agent Loop ${loop}] No hay más herramientas. Iniciando streaming final.`);
+      return await this.generateStream(agentMessages, onChunk);
 
     }
 

@@ -277,12 +277,17 @@ export class ChatController {
         }
         
         // Formatear para Ollama mapper
+        // 1. Obtener estado de la sesión y botones (Agente y Web)
+        const session = await historyService.getSessionData(sessionId);
+        const isWebSearchActive = session ? session.web_search_enabled === 1 : false;
+        const isAgentEnabled = isAgentMode; 
+
         let ollamaHistory = history.map(h => ({ role: h.role, content: h.content }));
 
         // CONSOLIDAR PROMPTS DE SISTEMA
         let systemPrompts: string[] = [];
 
-        // 1. Extraer system prompts previos (RAG, etc.) y limpiar el historial de ellos
+        // Extraer system prompts previos (RAG, etc.) y limpiar el historial de ellos
         ollamaHistory = ollamaHistory.filter(h => {
           if (h.role === 'system') {
             systemPrompts.push(h.content);
@@ -291,16 +296,20 @@ export class ChatController {
           return true;
         });
 
-        // 2. Prompt General (Agente o Base)
+        // 2. Construir Prompt de Sistema Dinámico
         const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const systemPromptToUse = isAgentMode ? (llmConfig as any).agentSystemPrompt : (llmConfig as any).baseSystemPrompt;
+        let dynamicSystemPrompt = `FECHA ACTUAL: ${today}\n\n${(llmConfig as any).baseSystemPrompt}`;
 
-        if (systemPromptToUse) {
-          systemPrompts.unshift(`FECHA ACTUAL: ${today}\n\n${systemPromptToUse}`);
+        if (isAgentEnabled) {
+          dynamicSystemPrompt += `\n\n${(llmConfig as any).prompts.files}`;
+        }
+        if (isWebSearchActive) {
+          dynamicSystemPrompt += `\n\n${(llmConfig as any).prompts.web}`;
         }
 
+        systemPrompts.unshift(dynamicSystemPrompt);
+
         // 3. Contexto de Proyecto (si existe)
-        const session = await historyService.getSessionData(sessionId);
         if (session && session.root_path) {
           systemPrompts.push(`CONTEXTO DEL PROYECTO: Estás trabajando en la carpeta raíz: "${session.root_path}". Todas las herramientas de archivos y comandos deben ejecutarse con este contexto si no se especifica otra ruta absoluta.`);
         }
@@ -310,18 +319,28 @@ export class ChatController {
           ollamaHistory.unshift({ role: 'system' as any, content: systemPrompts.join('\n\n---\n\n') });
         }
         
-        if (isAgentMode) {
+        // 4. Determinar si usamos el loop de herramientas (Agente o Web activos)
+        const useToolLoop = isAgentEnabled || isWebSearchActive;
 
-          console.log('[Agent] Modo agente activado para esta petición.');
+        if (useToolLoop) {
 
-          // FILTRAR HERRAMIENTAS DE BÚSQUEDA WEB SI ESTÁ DESACTIVADO
-          const sessionData = await historyService.getSessionData(sessionId);
-          const isWebSearchEnabled = sessionData ? sessionData.web_search_enabled === 1 : true;
+          console.log(`[Agent] Activando loop de herramientas. Agente: ${isAgentEnabled}, Web: ${isWebSearchActive}`);
+
+          // FILTRAR HERRAMIENTAS SEGÚN LOS BOTONES ACTIVOS
+          let toolsToUse: any[] = [];
           
-          let toolsToUse = AGENT_TOOLS;
-          if (!isWebSearchEnabled) {
-            console.log('[Agent] Búsqueda web desactivada. Filtrando herramientas de internet.');
-            toolsToUse = AGENT_TOOLS.filter(t => t.function.name !== 'search_web' && t.function.name !== 'fetch_url_content');
+          if (isAgentEnabled) {
+            // Herramientas de archivos y comandos
+            toolsToUse.push(...AGENT_TOOLS.filter(t => 
+              ['read_file', 'write_file', 'list_directory', 'create_directory', 'run_command'].includes(t.function.name)
+            ));
+          }
+          
+          if (isWebSearchActive) {
+            // Herramientas de internet
+            toolsToUse.push(...AGENT_TOOLS.filter(t => 
+              ['search_web', 'fetch_url_content'].includes(t.function.name)
+            ));
           }
 
           const metrics = await llmService.generateAgentStream(
