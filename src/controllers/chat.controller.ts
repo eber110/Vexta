@@ -389,9 +389,9 @@ export class ChatController {
 
             ollamaHistory,
 
-            (chunk: string) => {
-              fullReply += chunk;
-              res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+            (chunk: string, isThought?: boolean) => {
+              fullReply += isThought ? '' : chunk;
+              res.write(`data: ${JSON.stringify({ chunk, thought: isThought ? chunk : undefined })}\n\n`);
             },
 
             // Callback cuando se ejecuta una herramienta
@@ -409,9 +409,9 @@ export class ChatController {
 
         } else {
 
-          const metrics = await llmService.generateStream(ollamaHistory, (chunk: string) => {
-            fullReply += chunk;
-            res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+          const metrics = await llmService.generateStream(ollamaHistory, (chunk: string, isThought?: boolean) => {
+            fullReply += isThought ? '' : chunk;
+            res.write(`data: ${JSON.stringify({ chunk, thought: isThought ? chunk : undefined })}\n\n`);
           });
 
           // 4. Guardar mensaje completo final del agente y cerrar stream

@@ -18,6 +18,8 @@ export const chatComponent = {
   agentModeActive: false,
   webSearchActive: true,
   hideThinking: false,
+  thoughtContainer: null,
+  thoughtContent: null,
   
   init() {
     
@@ -25,8 +27,12 @@ export const chatComponent = {
     this.mainContainer = document.querySelector('main');
     this.userInput = document.getElementById('userInput');
     this.sendBtn = document.getElementById('sendBtn');
+    this.stopBtn = document.getElementById('stopBtn');
     
     this.sendBtn.addEventListener('click', () => this.handleSend());
+    if (this.stopBtn) {
+      this.stopBtn.addEventListener('click', () => this.stopResponse());
+    }
     this.userInput.addEventListener('keydown', (e) => {
       // Si se presiona Enter sin la tecla Shift, se envía el mensaje
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -176,44 +182,135 @@ export const chatComponent = {
   },
 
   appendMessage(text, sender, isThinking = false) {
-    
     const div = document.createElement('div');
     div.classList.add('message', sender);
-    
-    if (isThinking) {
-      
-      div.classList.add('thinking');
-      div.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
-      
-    } else if (sender === 'agent') {
-      
-      const formattedContent = formatMessage(text);
-      while (formattedContent.firstChild) {
-        div.appendChild(formattedContent.firstChild);
-      }
-      
-    } else {
-      
-      div.textContent = text;
-      
+
+    // Contenedor principal para el contenido (para no interferir con botones absolutos)
+    const innerDiv = document.createElement('div');
+    innerDiv.classList.add('message-inner');
+
+    // Botón de edición para mensajes de usuario (ahora hijo de innerDiv para posicionamiento preciso)
+    if (sender === 'user') {
+      const editBtn = document.createElement('button');
+      editBtn.classList.add('edit-msg-btn');
+      editBtn.title = 'Editar consulta';
+      editBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      `;
+      editBtn.addEventListener('click', () => this.editMessage(text));
+      innerDiv.appendChild(editBtn);
     }
     
+    // Contenedor para el texto del mensaje
+    const textDiv = document.createElement('div');
+    textDiv.classList.add('message-text');
+
+    if (isThinking && sender === 'agent') {
+      div.classList.add('thinking');
+      // Animación de carga (dots)
+      const dots = document.createElement('div');
+      dots.classList.add('thinking-dots');
+      dots.innerHTML = '<span></span><span></span><span></span>';
+      innerDiv.appendChild(dots);
+    } else {
+      textDiv.textContent = text;
+      innerDiv.appendChild(textDiv);
+    }
+
+    div.appendChild(innerDiv);
     this.chatBox.appendChild(div);
     this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
     
+    // Resetear contenedores de pensamiento para la nueva respuesta
+    if (sender === 'agent' && isThinking) {
+      this.thoughtContainer = null;
+      this.thoughtContent = null;
+    }
+
     return div;
   },
   
-  updateAgentMessage(div, newText) {
+  appendThoughtContainer(parentDiv) {
+    if (this.thoughtContainer) return this.thoughtContainer;
+
+    const container = document.createElement('div');
+    container.classList.add('thought-container');
     
+    container.innerHTML = `
+      <div class="thought-header">
+        <div class="thought-title">
+          <svg class="thought-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+          <span>Proceso de Pensamiento <span class="thought-status">(razonando...)</span></span>
+        </div>
+      </div>
+      <div class="thought-content"></div>
+    `;
+
+    // Toggle colapsar/expandir
+    const header = container.querySelector('.thought-header');
+    header.addEventListener('click', () => {
+      container.classList.toggle('collapsed');
+    });
+
+    // Insertar debajo de los puntos de carga (si existen) o al principio del innerDiv
+    const innerDiv = parentDiv.querySelector('.message-inner');
+    const dots = innerDiv.querySelector('.thinking-dots');
+    if (dots) {
+      dots.after(container);
+    } else {
+      innerDiv.prepend(container);
+    }
+
+    this.thoughtContainer = container;
+    this.thoughtContent = container.querySelector('.thought-content');
+    
+    return container;
+  },
+
+  updateThought(parentDiv, text) {
+    if (this.hideThinking) return;
+    
+    const container = this.appendThoughtContainer(parentDiv);
+    const content = this.thoughtContent;
+    
+    content.textContent += text;
+    this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
+  },
+
+  finalizeThought() {
+    if (this.thoughtContainer) {
+      const status = this.thoughtContainer.querySelector('.thought-status');
+      if (status) status.textContent = '(finalizado)';
+    }
+  },
+  
+  updateAgentMessage(div, newText) {
     div.classList.remove('thinking');
-    div.innerHTML = '';
+    const innerDiv = div.querySelector('.message-inner');
+    
+    // Eliminar puntos de carga si existen
+    const dots = innerDiv.querySelector('.thinking-dots');
+    if (dots) dots.remove();
+
+    // Buscar o crear el contenedor de texto real
+    let textDiv = innerDiv.querySelector('.message-text');
+    if (!textDiv) {
+      textDiv = document.createElement('div');
+      textDiv.classList.add('message-text');
+      innerDiv.appendChild(textDiv);
+    }
+
+    textDiv.innerHTML = '';
     const formattedContent = formatMessage(newText);
     while (formattedContent.firstChild) {
-      div.appendChild(formattedContent.firstChild);
+      textDiv.appendChild(formattedContent.firstChild);
     }
     this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
-    
   },
   
   handleTokenMetrics(metrics) {
@@ -302,6 +399,24 @@ export const chatComponent = {
 
   },
 
+  stopResponse() {
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+    }
+    this.sendBtn.classList.remove('hidden');
+    if (this.stopBtn) this.stopBtn.classList.add('hidden');
+    this.finalizeThought();
+  },
+
+  editMessage(text) {
+    this.userInput.value = text;
+    this.userInput.focus();
+    // Ajustar altura del textarea
+    this.userInput.style.height = 'auto';
+    this.userInput.style.height = (this.userInput.scrollHeight) + 'px';
+  },
+
   async handleSend() {
     
     const text = this.userInput.value.trim();
@@ -339,6 +454,13 @@ export const chatComponent = {
       this.userInput.value = '';
       this.userInput.style.height = 'auto'; // Restauramos a altura default (1 línea)
       
+      // Mostrar botón Stop, ocultar Send
+      this.sendBtn.classList.add('hidden');
+      if (this.stopBtn) this.stopBtn.classList.remove('hidden');
+
+      // Crear AbortController para permitir cancelar
+      this.currentAbortController = new AbortController();
+
       // Inyectar estado de "pensando..."
       const agentDiv = this.appendMessage('', 'agent', true);
       let fullResponse = '';
@@ -349,30 +471,78 @@ export const chatComponent = {
           sessionId, 
           text, 
           // onChunk callback
-          (chunk) => {
-            if (!chunk) return; // Ignorar heartbeats vacíos del servidor (matan la animación)
-            fullResponse += chunk;
+          (chunk, thought) => {
+            if (thought !== undefined && thought !== null) {
+              this.updateThought(agentDiv, thought);
+              return;
+            }
+            
+            // Si el backend no detectó el pensamiento pero viene en el contenido (tags <thought>)
+            if (chunk && chunk.includes('<thought>')) {
+              this.isProcessingThoughtTag = true;
+              const parts = chunk.split('<thought>');
+              if (parts[0]) {
+                fullResponse += parts[0];
+                this.updateAgentMessage(agentDiv, fullResponse);
+              }
+              if (parts[1]) {
+                this.updateThought(agentDiv, parts[1]);
+              }
+              return;
+            }
+
+            if (this.isProcessingThoughtTag) {
+              if (chunk && chunk.includes('</thought>')) {
+                const parts = chunk.split('</thought>');
+                if (parts[0]) {
+                  this.updateThought(agentDiv, parts[0]);
+                }
+                this.isProcessingThoughtTag = false;
+                this.finalizeThought();
+                if (parts[1]) {
+                  fullResponse += parts[1];
+                  this.updateAgentMessage(agentDiv, fullResponse);
+                }
+              } else {
+                this.updateThought(agentDiv, chunk);
+              }
+              return;
+            }
+
+            // Si es un chunk de contenido (incluso si está vacío), finalizamos el pensamiento
+            this.finalizeThought();
+            
+            // Forzamos la actualización del mensaje para quitar los puntos de carga al primer signo de vida
+            fullResponse += chunk || '';
             this.updateAgentMessage(agentDiv, fullResponse);
           },
           // onDone callback
           (metrics) => {
+            this.finalizeThought();
             if (metrics) {
               this.handleTokenMetrics(metrics);
             }
             if (this.onMessageSent) this.onMessageSent(); 
+            this.stopResponse(); // Limpiar controlador y restaurar botones
           },
           // onError callback
           (error) => {
+            if (error.name === 'AbortError') {
+              console.log('Generación cancelada por el usuario');
+              return;
+            }
             if (!fullResponse) {
               this.updateAgentMessage(agentDiv, 'Error: ' + error.message);
             }
+            this.stopResponse();
           },
           // useAgent flag
           this.agentModeActive,
           // onToolCall callback — muestra qué herramienta ejecutó el agente
           (toolCall) => {
             this.appendToolCallNotice(toolCall.name, toolCall.result);
-          }
+          },
+          this.currentAbortController.signal
         );
         
       } catch (error) {

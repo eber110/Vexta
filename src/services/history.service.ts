@@ -109,18 +109,19 @@ export class HistoryService {
     
     // Buscamos mensajes que contengan la palabra clave en chats DIFERENTES al actual.
     // Usamos JOIN para obtener la fecha de la sesión y el título.
+    // Buscamos mensajes utilizando FTS5 para máxima velocidad
     const sql = `
       SELECT s.title as session_title, s.created_at, m.role, m.content 
-      FROM messages m
+      FROM messages_fts f
+      JOIN messages m ON f.id = m.id
       JOIN sessions s ON m.session_id = s.id
       WHERE m.session_id != ? 
-      AND m.content LIKE ?
+      AND messages_fts MATCH ?
       ORDER BY s.created_at DESC, m.created_at ASC
       LIMIT 20
     `;
     
-    const searchPattern = `%${keyword}%`;
-    return await dbService.query(sql, [currentSessionId, searchPattern]);
+    return await dbService.query(sql, [currentSessionId, keyword]);
     
   }
   

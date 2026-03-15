@@ -90,8 +90,46 @@ export class DbService {
       UPDATE settings SET value = 'http://127.0.0.1:11434' 
       WHERE key = 'ollama_url' AND value = 'http://localhost:11434'
     `);
+
+    // --- OPTIMIZACIÓN DE BÚSQUEDA (FTS5) ---
+    // Crear tabla virtual para búsqueda rápida si no existe
+    await this.run(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+        content,
+        id UNINDEXED,
+        session_id UNINDEXED
+      )
+    `);
+
+    // Sincronizar datos existentes si la tabla FTS está vacía
+    const ftsCount = await this.queryOne(`SELECT count(*) as count FROM messages_fts`);
+    if (ftsCount.count === 0) {
+      await this.run(`
+        INSERT INTO messages_fts(id, session_id, content)
+        SELECT id, session_id, content FROM messages
+      `);
+    }
+
+    // Triggers para mantener FTS5 actualizado
+    await this.run(`
+      CREATE TRIGGER IF NOT EXISTS messages_after_insert AFTER INSERT ON messages BEGIN
+        INSERT INTO messages_fts(id, session_id, content) VALUES (new.id, new.session_id, new.content);
+      END
+    `);
+
+    await this.run(`
+      CREATE TRIGGER IF NOT EXISTS messages_after_update AFTER UPDATE ON messages BEGIN
+        UPDATE messages_fts SET content = new.content WHERE id = old.id;
+      END
+    `);
+
+    await this.run(`
+      CREATE TRIGGER IF NOT EXISTS messages_after_delete AFTER DELETE ON messages BEGIN
+        DELETE FROM messages_fts WHERE id = old.id;
+      END
+    `);
     
-    console.log('[DB Service] Tablas inicializadas u omitidas si ya existían.');
+    console.log('[DB Service] Tablas y optimización FTS5 inicializadas.');
     
   }
   

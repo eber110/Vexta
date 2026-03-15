@@ -20,7 +20,7 @@ export class LlmService {
     
   }
   
-  async generateStream( messages: {role: string, content: string}[], onChunk: (chunk: string) => void ): Promise<any> {
+  async generateStream( messages: {role: string, content: string}[], onChunk: (chunk: string, isThought?: boolean) => void ): Promise<any> {
     
     const config = llmConfig.providers.ollama;
     const url = `${config.baseUrl}/api/chat`; // <-- Cambio a /api/chat
@@ -95,9 +95,18 @@ export class LlmService {
           if (!line.trim()) continue;
           try {
             const parsed = JSON.parse(line);
-            if (parsed.message && parsed.message.content) { 
-              onChunk(parsed.message.content);
+            
+            // Capturar contenido y pensamiento (usamos !== undefined para permitir "" o 0)
+            if (parsed.message) {
+              if (parsed.message.reasoning_content !== undefined) {
+                onChunk(parsed.message.reasoning_content, true);
+              } else if (parsed.message.thought !== undefined) {
+                onChunk(parsed.message.thought, true);
+              } else if (parsed.message.content !== undefined) {
+                onChunk(parsed.message.content, false);
+              }
             }
+
             if (parsed.done) {
               return {
                 prompt_eval_count: parsed.prompt_eval_count || 0,
@@ -124,7 +133,7 @@ export class LlmService {
   // Loop de tool calling para el modo agente
   async generateAgentStream(
     messages: {role: string, content: string}[],
-    onChunk: (chunk: string) => void,
+    onChunk: (chunk: string, isThought?: boolean) => void,
     onToolCall?: (toolName: string, result: string) => void,
     tools: any[] = AGENT_TOOLS
   ): Promise<any> {
@@ -158,7 +167,7 @@ export class LlmService {
     for (let loop = 0; loop < MAX_TOOL_LOOPS; loop++) {
 
       // Señal de vida para el frontend antes de la llamada pesada
-      onChunk('');
+      onChunk('🔍 Analizando petición...', true);
 
       console.log(`[Agent Loop ${loop}] Enviando a Ollama:`, JSON.stringify(agentMessages, null, 2));
 
@@ -184,6 +193,13 @@ export class LlmService {
       const data: any = await response.json();
       console.log(`[Agent Loop ${loop}] Respuesta de Ollama:`, JSON.stringify(data, null, 2));
       const assistantMsg = data.message;
+
+      // Si el modelo envió pensamientos en el JSON (unificado), emitirlos
+      if (assistantMsg?.thought) {
+        onChunk(assistantMsg.thought, true);
+      } else if (assistantMsg?.reasoning_content) {
+        onChunk(assistantMsg.reasoning_content, true);
+      }
 
       // Si el modelo usó herramientas, ejecutarlas
       if (assistantMsg?.tool_calls && assistantMsg.tool_calls.length > 0) {

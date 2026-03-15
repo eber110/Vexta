@@ -81,7 +81,7 @@ export const apiService = {
     
   },
   
-  async sendMessageStream(sessionId, text, onChunk, onDone, onError, useAgent = false, onToolCall = null) {
+  async sendMessageStream(sessionId, text, onChunk, onDone, onError, useAgent = false, onToolCall = null, signal = null) {
     if (!sessionId) throw new Error('No hay sesión activa seleccionada');
     
     try {
@@ -90,7 +90,8 @@ export const apiService = {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ sessionId, message: text, useAgent })
+        body: JSON.stringify({ sessionId, message: text, useAgent }),
+        signal: signal
       });
       
       if (!response.ok) {
@@ -114,7 +115,7 @@ export const apiService = {
             if (part.startsWith('data: ')) {
               try {
                 const parsed = JSON.parse(part.substring(6));
-                if (parsed.chunk !== undefined && onChunk) onChunk(parsed.chunk);
+                if (parsed.chunk !== undefined && onChunk) onChunk(parsed.chunk, parsed.thought);
                 if (parsed.done && onDone) onDone(parsed.metrics);
                 // Evento de herramienta ejecutada por el agente
                 if (parsed.toolCall && onToolCall) onToolCall(parsed.toolCall);
