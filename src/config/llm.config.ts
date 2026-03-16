@@ -4,6 +4,9 @@ export const llmConfig = {
 
   // Indica si el modo agente (tool calling) está activo
   agentMode: false,
+
+  // Límite de iteraciones para el agente antes de forzar una respuesta
+  maxToolLoops: 10,
   
   providers: {
     ollama: {

@@ -162,7 +162,8 @@ export class LlmService {
     }
     agentMessages.push(...filteredMessages);
 
-    const MAX_TOOL_LOOPS = 5;
+    const MAX_TOOL_LOOPS = llmConfig.maxToolLoops || 5;
+    const toolCallHistory = new Set<string>();
 
     for (let loop = 0; loop < MAX_TOOL_LOOPS; loop++) {
 
@@ -212,10 +213,19 @@ export class LlmService {
         });
 
         // Ejecutar cada herramienta y agregar resultados como mensajes "tool"
+        let loopDetected = false;
         for (const tc of assistantMsg.tool_calls) {
 
           const toolName: string = tc.function?.name ?? 'unknown';
           const toolArgs: Record<string, any> = tc.function?.arguments ?? {};
+          
+          const toolCallKey = `${toolName}:${JSON.stringify(toolArgs)}`;
+          if (toolCallHistory.has(toolCallKey)) {
+            console.warn(`[Agent] Bucle detectado en herramienta: ${toolName}. Forzando salida.`);
+            loopDetected = true;
+            break;
+          }
+          toolCallHistory.add(toolCallKey);
 
           console.log(`[Agent] Ejecutando herramienta: ${toolName}`, toolArgs);
           const toolResult = await executeTool(toolName, toolArgs);
@@ -234,6 +244,8 @@ export class LlmService {
 
         }
 
+        if (loopDetected) break; // Salir del loop de iteraciones total para ir al resumen final
+
         // Continuar el loop para que el modelo procese los resultados
         continue;
 
@@ -246,9 +258,14 @@ export class LlmService {
 
     }
 
-    // Si se agotaron loops, responder con mensaje de error
-    onChunk('Error: el agente superó el número máximo de iteraciones de herramientas.');
-    return { prompt_eval_count: 0, eval_count: 0 };
+    // Si se agotaron loops, intentar forzar una respuesta final con lo recolectado
+    onChunk('\n\n⚠️ *Se ha alcanzado el límite de investigación. Resumiendo hallazgos...*\n\n', true);
+    agentMessages.push({ 
+      role: 'user', 
+      content: 'Has realizado muchas búsquedas y acciones. Por favor, con la información que tienes hasta el momento (incluyendo los resultados de las herramientas), proporciona la mejor respuesta final posible al usuario. Si te falta información, indícalo claramente.' 
+    });
+    
+    return await this.generateStream(agentMessages, onChunk);
 
   }
 

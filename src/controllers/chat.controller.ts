@@ -351,6 +351,7 @@ export class ChatController {
         
         // 4. Determinar si usamos el loop de herramientas (Agente o Web activos)
         const useToolLoop = isAgentEnabled || isWebSearchActive;
+        let fullThought = '';
 
         if (useToolLoop) {
 
@@ -390,12 +391,19 @@ export class ChatController {
             ollamaHistory,
 
             (chunk: string, isThought?: boolean) => {
-              fullReply += isThought ? '' : chunk;
+              if (isThought) {
+                fullThought += chunk;
+              } else {
+                fullReply += chunk;
+              }
               res.write(`data: ${JSON.stringify({ chunk, thought: isThought ? chunk : undefined })}\n\n`);
             },
 
             // Callback cuando se ejecuta una herramienta
             (toolName: string, toolResult: string) => {
+              // También guardamos el aviso de herramienta en el pensamiento persistente
+              const toolNotice = `[TOOL_CALL:${toolName}]${toolResult}`;
+              fullThought += toolNotice;
               res.write(`data: ${JSON.stringify({ toolCall: { name: toolName, result: toolResult } })}\n\n`);
             },
             
@@ -403,19 +411,23 @@ export class ChatController {
 
           );
 
-          await historyService.addMessage(sessionId, 'agent', fullReply);
+          await historyService.addMessage(sessionId, 'agent', fullReply, fullThought);
           res.write(`data: ${JSON.stringify({ done: true, metrics })}\n\n`);
           res.end();
 
         } else {
 
           const metrics = await llmService.generateStream(ollamaHistory, (chunk: string, isThought?: boolean) => {
-            fullReply += isThought ? '' : chunk;
+            if (isThought) {
+              fullThought += chunk;
+            } else {
+              fullReply += chunk;
+            }
             res.write(`data: ${JSON.stringify({ chunk, thought: isThought ? chunk : undefined })}\n\n`);
           });
 
           // 4. Guardar mensaje completo final del agente y cerrar stream
-          await historyService.addMessage(sessionId, 'agent', fullReply);
+          await historyService.addMessage(sessionId, 'agent', fullReply, fullThought);
           res.write(`data: ${JSON.stringify({ done: true, metrics })}\n\n`);
           res.end();
 

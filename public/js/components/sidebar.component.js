@@ -259,7 +259,7 @@ export const sidebarComponent = {
       if (data.history && data.history.length > 0) {
         
         data.history.forEach(msg => {
-          chatComponent.appendMessage(msg.content, msg.role);
+          chatComponent.appendMessage(msg.content, msg.role, false, msg.thought);
         });
         
       } else {

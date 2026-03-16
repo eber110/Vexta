@@ -3,8 +3,9 @@ import { dbService } from './db.service';
 export interface ChatMessage {
   id?: number;
   session_id: number;
-  role: 'user' | 'agent' | 'system';
+  role: 'user' | 'agent' | 'system' | 'tool';
   content: string;
+  thought?: string | null;
   created_at?: string;
 }
 
@@ -79,15 +80,15 @@ export class HistoryService {
   
   async getHistory(sessionId: number): Promise<ChatMessage[]> {
     
-    const sql = `SELECT id, session_id, role, content, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC`;
+    const sql = `SELECT id, session_id, role, content, thought, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC`;
     return await dbService.query(sql, [sessionId]);
     
   }
   
-  async addMessage(sessionId: number, role: ChatMessage['role'], content: string): Promise<void> {
+  async addMessage(sessionId: number, role: ChatMessage['role'], content: string, thought: string | null = null): Promise<void> {
     
-    const sql = `INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)`;
-    await dbService.run(sql, [sessionId, role, content]);
+    const sql = `INSERT INTO messages (session_id, role, content, thought) VALUES (?, ?, ?, ?)`;
+    await dbService.run(sql, [sessionId, role, content, thought]);
     
     // Opcional: Si el título de la sesión dice "Nuevo Chat" y este es el primer mensaje de usuario, actualizar el título
     if (role === 'user') {

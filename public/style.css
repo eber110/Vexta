@@ -370,7 +370,6 @@ header p {
 }
 
 .model-selector-container {
-  margin-left: auto;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -380,6 +379,7 @@ header p {
 .model-label-text {
   color: var(--text-muted);
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .model-name {
@@ -521,40 +521,56 @@ main::-webkit-scrollbar {
 /* ===========================
    =========================== */
 
-/* --- Listas --- */
-.message ol {
-  margin: 10px 0 10px 1.4rem;
+/* --- Listas con Estética Premium --- */
+.message ol, .message ul {
+  margin: 14px 0 14px 1.5rem;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  list-style: none; /* Eliminamos decoración nativa */
 }
 
-.message ol li {
+.message ul li {
+  position: relative;
   line-height: 1.6;
-  padding-left: 4px;
-}
-
-.message ul {
-  list-style: none;
+  padding-left: 20px;
 }
 
 .message ul li::before {
-  content: '•';
-  color: var(--link-color);
-  font-weight: bold;
-  display: inline-block;
-  width: 1em;
-  margin-left: -1em;
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  width: 6px;
+  height: 6px;
+  background-color: var(--link-color);
+  border-radius: 50%;
+  opacity: 0.8;
 }
 
 .message ol {
-  list-style: decimal;
+  counter-reset: item;
 }
 
-.message ol li::marker {
+.message ol li {
+  position: relative;
+  line-height: 1.6;
+  padding-left: 28px;
+  counter-increment: item;
+}
+
+.message ol li::before {
+  content: counter(item);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 700;
   color: var(--link-color);
-  font-weight: bold;
+  font-size: 0.9rem;
+  width: 20px;
+  text-align: right;
+  opacity: 0.9;
 }
 
 /* --- Tablas con Scroll Táctil Horizontal --- */
@@ -918,12 +934,16 @@ main::-webkit-scrollbar {
 /* --- Links dentro de mensajes --- */
 .message a {
   color: var(--link-color);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none; /* Sin subrayado nativo */
+  font-weight: 600;
+  position: relative;
+  transition: color 0.2s ease;
+  border-bottom: 1px solid transparent; /* Efecto premium en lugar de underline */
 }
 
 .message a:hover {
   color: var(--link-hover-color);
+  border-bottom-color: var(--link-hover-color);
 }
 
 /* --- Texto en negrita e itálica --- */
@@ -1081,6 +1101,10 @@ main::-webkit-scrollbar {
 .tools-btn:hover {
   background-color: var(--bg-hover);
   color: var(--text-dim);
+}
+
+.action-btn-fixed {
+  flex-shrink: 0 !important;
 }
 
 @media (max-width: 600px) {
@@ -1572,6 +1596,57 @@ main::-webkit-scrollbar {
   color: #ff4a4a;
 }
 
+/* --- Herramientas (Tool Calls) --- */
+.tool-call-notice {
+  background-color: rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin: 8px 0;
+  padding: 10px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme="dark"] .tool-call-notice {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tool-call-notice.in-thought {
+  border-left: 3px solid #2ea44f;
+  background-color: rgba(46, 164, 79, 0.05);
+  margin-top: 10px;
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.tool-call-header strong {
+  color: #2ea44f;
+}
+
+.tool-call-result {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 4px;
+  font-family: 'Consolas', monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  border: none !important;
+}
+
+:root[data-theme="dark"] .tool-call-result {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
 /* Settings Input Styling */
 .input-row-settings {
   display: flex;
@@ -1625,7 +1700,8 @@ main::-webkit-scrollbar {
   font-family: inherit;
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
-  min-width: 160px;
+  min-width: 120px;
+  max-width: 160px;
 }
 
 .custom-select-btn:hover {
@@ -1633,10 +1709,11 @@ main::-webkit-scrollbar {
 }
 
 .custom-select-value {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 120px;
 }
 
 .custom-select-icon {
@@ -1831,6 +1908,20 @@ main::-webkit-scrollbar {
     opacity: 1 !important;
   }
 
+  /* Truncador agresivo para modelos con nombres largos en móvil */
+  .model-label-text {
+    display: none;
+  }
+
+  .custom-select-btn {
+    min-width: 100px;
+    max-width: 130px;
+    padding: 5px 10px;
+  }
+
+  .custom-select-value {
+    max-width: 80px;
+  }
 }
 
 /* ================================================
@@ -1871,6 +1962,14 @@ main::-webkit-scrollbar {
   /* El selector de modelo puede comprimirse si el sidebar está abierto */
   .model-selector-container {
     max-width: 200px;
+  }
+
+  .custom-select-btn {
+    max-width: 150px;
+  }
+
+  .custom-select-value {
+    max-width: 110px;
   }
 }
 

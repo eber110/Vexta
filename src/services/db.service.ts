@@ -78,6 +78,11 @@ export class DbService {
     try {
       await this.run(`ALTER TABLE sessions ADD COLUMN capabilities TEXT`);
     } catch (e) {}
+
+    // Migración simple: intentar agregar thought a mensajes si no existe
+    try {
+      await this.run(`ALTER TABLE messages ADD COLUMN thought TEXT`);
+    } catch (e) {}
     
     // Inicializar ajustes por defecto si no existen
     await this.run(`

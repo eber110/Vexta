@@ -181,7 +181,7 @@ export const chatComponent = {
     }
   },
 
-  appendMessage(text, sender, isThinking = false) {
+  appendMessage(text, sender, isThinking = false, thought = null) {
     const div = document.createElement('div');
     div.classList.add('message', sender);
 
@@ -189,7 +189,7 @@ export const chatComponent = {
     const innerDiv = document.createElement('div');
     innerDiv.classList.add('message-inner');
 
-    // Botón de edición para mensajes de usuario (ahora hijo de innerDiv para posicionamiento preciso)
+    // Botón de edición para mensajes de usuario
     if (sender === 'user') {
       const editBtn = document.createElement('button');
       editBtn.classList.add('edit-msg-btn');
@@ -215,6 +215,13 @@ export const chatComponent = {
       dots.classList.add('thinking-dots');
       dots.innerHTML = '<span></span><span></span><span></span>';
       innerDiv.appendChild(dots);
+    } else if (sender === 'agent') {
+      // Para mensajes históricos del agente o respuestas finalizadas, usamos Markdown
+      const formattedContent = formatMessage(text);
+      while (formattedContent.firstChild) {
+        textDiv.appendChild(formattedContent.firstChild);
+      }
+      innerDiv.appendChild(textDiv);
     } else {
       textDiv.textContent = text;
       innerDiv.appendChild(textDiv);
@@ -222,15 +229,48 @@ export const chatComponent = {
 
     div.appendChild(innerDiv);
     this.chatBox.appendChild(div);
+
+    // Restaurar proceso de pensamiento si existe (historial)
+    if (thought && sender === 'agent') {
+      this.restoreThought(div, thought);
+    }
+    
     this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
     
-    // Resetear contenedores de pensamiento para la nueva respuesta
+    // Resetear contenedores de pensamiento para la nueva respuesta en vivo
     if (sender === 'agent' && isThinking) {
       this.thoughtContainer = null;
       this.thoughtContent = null;
     }
 
     return div;
+  },
+
+  restoreThought(parentDiv, thoughtText) {
+    if (this.hideThinking) return;
+    
+    const container = this.appendThoughtContainer(parentDiv);
+    const content = this.thoughtContent;
+    
+    // El pensamiento guardado puede contener marcadores de herramientas: [TOOL_CALL:name]result
+    // Los parseamos para mostrarlos con el estilo correcto
+    const parts = thoughtText.split(/(\[TOOL_CALL:[^\]]+\][^[]*)/g);
+    
+    parts.forEach(part => {
+      if (part.startsWith('[TOOL_CALL:')) {
+        const match = part.match(/\[TOOL_CALL:([^\]]+)\](.*)/s);
+        if (match) {
+          const name = match[1];
+          const result = match[2];
+          this.appendToolCallNotice(name, result); // appendToolCallNotice ahora es inteligente y añade al thoughtContent
+        }
+      } else if (part.trim()) {
+        const textNode = document.createTextNode(part);
+        content.appendChild(textNode);
+      }
+    });
+
+    this.finalizeThought();
   },
   
   appendThoughtContainer(parentDiv) {
@@ -286,16 +326,40 @@ export const chatComponent = {
     if (this.thoughtContainer) {
       const status = this.thoughtContainer.querySelector('.thought-status');
       if (status) status.textContent = '(finalizado)';
+      
+      // Ocultar el pensamiento completamente al finalizar para limpiar la UI
+      this.thoughtContainer.classList.add('hidden');
+      
+      // Limpiar referencias para que el próximo mensaje cree uno nuevo
+      this.thoughtContainer = null;
+      this.thoughtContent = null;
     }
   },
   
-  updateAgentMessage(div, newText) {
+  updateAgentMessage(div, newText, force = false) {
     div.classList.remove('thinking');
     const innerDiv = div.querySelector('.message-inner');
     
     // Eliminar puntos de carga si existen
     const dots = innerDiv.querySelector('.thinking-dots');
     if (dots) dots.remove();
+
+    // Lógica para no saturar el navegador con re-renders pesados (Markdown + Highlight)
+    const now = Date.now();
+    if (!force && this._lastRenderTime && (now - this._lastRenderTime < 150)) {
+       this._pendingText = newText;
+       if (!this._renderTimeout) {
+         this._renderTimeout = setTimeout(() => {
+           const textToRender = this._pendingText;
+           this._renderTimeout = null;
+           this.updateAgentMessage(div, textToRender, true);
+         }, 150 - (now - this._lastRenderTime));
+       }
+       return;
+    }
+    
+    this._lastRenderTime = now;
+    this._pendingText = null;
 
     // Buscar o crear el contenedor de texto real
     let textDiv = innerDiv.querySelector('.message-text');
@@ -375,6 +439,30 @@ export const chatComponent = {
   },
   
   appendToolCallNotice(toolName, toolResult) {
+    // Si hay un contenedor de pensamiento activo, añadimos el aviso allí
+    if (this.thoughtContent) {
+      const toolNotice = document.createElement('div');
+      toolNotice.classList.add('tool-call-notice', 'in-thought');
+
+      // Abreviar el resultado para el preview (máx 120 caracteres)
+      const preview = toolResult.length > 120
+        ? toolResult.slice(0, 120) + '…'
+        : toolResult;
+
+      toolNotice.innerHTML = `
+        <div class="tool-call-header">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+          </svg>
+          <span>Herramienta: <strong>${toolName}</strong></span>
+        </div>
+        <pre class="tool-call-result">${preview}</pre>
+      `;
+
+      this.thoughtContent.appendChild(toolNotice);
+      this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
+      return;
+    }
 
     const div = document.createElement('div');
     div.classList.add('tool-call-notice');
@@ -396,7 +484,6 @@ export const chatComponent = {
 
     this.chatBox.appendChild(div);
     this.mainContainer.scrollTop = this.mainContainer.scrollHeight;
-
   },
 
   stopResponse() {
