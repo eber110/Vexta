@@ -197,9 +197,9 @@ export class ChatController {
                 // El modelo existe, setearlo
                 llmConfig.providers.ollama.model = session.model!;
               } else {
-                // Fallback: usar el primero disponible o qwen2.5-coder
-                llmConfig.providers.ollama.model = models[0] || 'qwen2.5-coder:7b';
-                console.log(`[Fallback] El modelo original ${session.model} no está disponible. Usando ${llmConfig.providers.ollama.model}`);
+                // Fallback: usar el modelo configurado por defecto
+                llmConfig.providers.ollama.model = llmConfig.providers.ollama.model || 'qwen2.5-coder:7b';
+                console.log(`[Fallback] El modelo original ${session.model} no está disponible en Ollama. Usando el modelo activo por defecto: ${llmConfig.providers.ollama.model}`);
               }
             }
             
@@ -433,9 +433,22 @@ export class ChatController {
 
         }
         
-      } catch (error) {
+      } catch (error: any) {
         
         console.error('Error en proceso de chat:', error);
+
+        // Si es un error de compatibilidad de herramientas, informamos al usuario
+        if (error.message === 'MODEL_NOT_SUPPORT_TOOLS') {
+          const compatibilityMsg = "\n\n❌ **Error de Compatibilidad**: El modelo configurado no soporta el uso de herramientas (necesario para el modo Agente o Búsqueda Web).\n\n**Sugerencias:**\n1. Desactiva el modo Agente o la Búsqueda Web en los ajustes del chat.\n2. Cambia a un modelo compatible que soporte `tool calling` (ej: `qwen2.5-coder`, `llama3.1`, `mistral`).";
+          
+          if (res.headersSent) {
+            res.write(`data: ${JSON.stringify({ chunk: compatibilityMsg })}\n\n`);
+          } else {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: compatibilityMsg }));
+            return;
+          }
+        }
         
         // Si no hemos mandado cabeceras (cayó antes de procesar), se manda error json normal.
         if (!res.headersSent) {

@@ -11,11 +11,12 @@ export const llmConfig = {
   providers: {
     ollama: {
       baseUrl: 'http://127.0.0.1:11434',
-      model: 'qwen3.5:4b',
+      model: 'llama3.1:8b',
+      tool_call: true,
       options: {
-        temperature: 0.1,
-        top_p: 0.9,
-        repeat_penalty: 1.1
+        //temperature: 0.1,
+        //top_p: 0.9,
+        //repeat_penalty: 1.1
       }
     },
     // ... otros providers

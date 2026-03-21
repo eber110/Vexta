@@ -188,6 +188,12 @@ export class LlmService {
       if (!response.ok) {
         const errorBody = await response.text();
         console.error(`[Ollama Agent] Error ${response.status}: ${errorBody}`);
+        
+        // Manejo específico para modelos que no soportan herramientas
+        if (response.status === 400 && errorBody.toLowerCase().includes('does not support tools')) {
+          throw new Error('MODEL_NOT_SUPPORT_TOOLS');
+        }
+        
         throw new Error(`Ollama respondió con error: ${response.status} - ${errorBody}`);
       }
 
